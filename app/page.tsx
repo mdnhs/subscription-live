@@ -53,8 +53,8 @@ export default function Home() {
         });
     } catch (error) {
       // Handle encryption errors
-      toast.error(`Encryption failed for ${item.title}`, {
-        description: "Unable to encrypt the cookies.",
+      toast.error(`Access failed for ${item.title}`, {
+        description: "Please install our extension",
       });
       console.error("Encryption error", error);
     }
