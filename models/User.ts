@@ -7,6 +7,7 @@ export interface UserDocument {
   name: string;
   phone: string;
   image: string;
+  role: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,11 +31,15 @@ const UserSchema = new Schema<UserDocument>(
       type: String,
       required: [true, "Name is required"],
     },
+    role: {
+      type: String,
+      default: "user",
+      enum: ["user", "admin"], // Optional: restrict possible role values
+    },
   },
   {
     timestamps: true,
   }
 );
-
 const User = mongoose.models?.User || model<UserDocument>("User", UserSchema);
 export default User;

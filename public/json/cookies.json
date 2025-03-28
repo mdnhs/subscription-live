@@ -2,7 +2,7 @@
   {
     "id": 1,
     "title": "Chat GPT 4o",
-    "targetUrl": "https://chatgpt.com/",
+    "targetUrl": "https://chatgpt.com",
     "json": [
       {
         "domain": "chatgpt.com",
@@ -85,7 +85,7 @@
   },
   {
     "id": 1,
-    "title": "netflix",
+    "title": "Netflix",
     "targetUrl": "https://www.netflix.com/browse",
     "json": [
       {

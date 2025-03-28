@@ -1,14 +1,21 @@
 "use client";
-import { ModeToggle } from "@/components/ModeToggle";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
+import { BadgeDollarSign, Lock, Unlock } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { decrypt, encrypt } from "../function/cryptoDecrypt";
 import CookiesData from "../public/json/cookies.json";
-import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface CookieItem {
   title: string;
@@ -18,164 +25,183 @@ interface CookieItem {
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const router = useRouter();
-
-  const DECRYPT_PASS = process.env.DECRYPT_PASS;
   const [cookies, setCookies] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const DECRYPT_PASS = process.env.DECRYPT_PASS;
 
-  const showSession = () => {
-    if (status === "authenticated") {
-      return (
-        <Button
-          variant={"outline"}
-          onClick={() => {
-            signOut({ redirect: false }).then(() => {
-              router.push("/");
-            });
-          }}
-        >
-          Sign Out
-        </Button>
-      );
-    } else if (status === "loading") {
-      return <span className="text-[#888] text-sm mt-7">Loading...</span>;
-    } else {
-      return (
-        <Link href="/login">
-          <Button variant={"outline"}>Sign In</Button>
-        </Link>
-      );
-    }
-  };
-
-  // Function to handle encryption and copying for a specific cookie
-  const handleEncryptAndCopy = (item: CookieItem) => {
+  const handleEncryptAndCopy = async (item: CookieItem) => {
+    setIsLoading(true);
     try {
-      // Prepare the cookie data
       const cookieToEncrypt =
         typeof item.json === "string" ? item.json : JSON.stringify(item.json);
 
-      // Encrypt the cookies
       const encryptedCookies = encrypt(cookieToEncrypt, DECRYPT_PASS!);
       setCookies(encryptedCookies);
 
-      // Convert to string if needed
       const cookiesToCopy =
         typeof encryptedCookies === "string"
           ? encryptedCookies
-          : JSON.stringify(encryptedCookies, null, 2);
+          : JSON.stringify(encryptedCookies);
 
-      // Copy to clipboard
-      navigator.clipboard
-        .writeText(cookiesToCopy)
-        .then(() => {
-          // Show success toast
-          toast.success(`Encrypted ${item.title} cookies copied!`, {
-            description: "The encrypted cookies are now in your clipboard.",
-          });
-          window.open(item.targetUrl, "_blank");
-        })
-        .catch((err) => {
-          // Show error toast if copy fails
-          toast.error(`Failed to copy ${item.title} cookies`, {
-            description: "Please try again or copy manually.",
-          });
-          console.error("Copy failed", err);
-        });
-    } catch (error) {
-      // Handle encryption errors
-      toast.error(`Access failed for ${item.title}`, {
-        description: "Please install our extension",
+      await navigator.clipboard.writeText(cookiesToCopy);
+      toast.success(`Encrypted ${item.title} cookies copied!`, {
+        description: "Successfully copied to clipboard",
       });
-      console.error("Encryption error", error);
+      window.open(item.targetUrl, "_blank");
+    } catch (error) {
+      toast.error(`Failed to encrypt ${item.title}`, {
+        description: "Please try again or install our extension",
+      });
+      console.error("Encryption error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Function to handle decryption and copying for a specific cookie
-  const handleDecryptAndCopy = (item: CookieItem) => {
+  const handleDecryptAndCopy = async (item: CookieItem) => {
+    if (!cookies) {
+      toast.error("No encrypted cookies", {
+        description: "Please encrypt cookies first",
+      });
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // Prepare the cookie data
-      const cookieToDecrypt = cookies;
-
-      // Decrypt the cookies
-      const decryptedCookies = decrypt(cookieToDecrypt, DECRYPT_PASS!);
-
-      // Convert to string if needed
+      const decryptedCookies = decrypt(cookies, DECRYPT_PASS!);
       const cookiesToCopy =
         typeof decryptedCookies === "string"
           ? decryptedCookies
-          : JSON.stringify(decryptedCookies, null, 2);
+          : JSON.stringify(decryptedCookies);
 
-      // Copy to clipboard
-      navigator.clipboard
-        .writeText(cookiesToCopy)
-        .then(() => {
-          // Show success toast
-          toast.success(`Decrypted ${item.title} cookies copied!`, {
-            description: "The decrypted cookies are now in your clipboard.",
-          });
-        })
-        .catch((err) => {
-          // Show error toast if copy fails
-          toast.error(`Failed to copy ${item.title} cookies`, {
-            description: "Please try again or copy manually.",
-          });
-          console.error("Copy failed", err);
-        });
-    } catch (error) {
-      // Handle decryption errors
-      toast.error(`Decryption failed for ${item.title}`, {
-        description: "Unable to decrypt the cookies. Check the encryption key.",
+      await navigator.clipboard.writeText(cookiesToCopy);
+      toast.success(`Decrypted ${item.title} cookies copied!`, {
+        description: "Successfully copied to clipboard",
       });
-      console.error("Decryption error", error);
+    } catch (error) {
+      toast.error(`Failed to decrypt ${item.title}`, {
+        description: "Invalid encryption key or corrupted data",
+      });
+      console.error("Decryption error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div>
-      <div className="container mx-auto py-5">
-        <div className="h-20 w-full flex items-center justify-between border rounded-full p-5 shadow-2xs">
-          <div>Logo</div>
-          <div className="flex items-center gap-5">
-            {showSession()}
-            <ModeToggle />
-          </div>
-        </div>
-        <div className="text-center py-5">
-          <h1 className="text-xl font-semibold">
-            Hello {session?.user?.name ?? "Guest"}!
-          </h1>
-          <p>
-            Welcome to{" "}
-            {status === "authenticated" ? "your dashboard" : "our website"}.
-          </p>
-        </div>
-        {status === "authenticated" && (
-          <div className="py-5 flex flex-col justify-center items-center">
-            <div className="flex flex-col gap-2 mt-4">
-              {CookiesData.map((item: CookieItem, idx: number) => (
-                <div key={idx + "CookiesData"} className="flex gap-2">
-                  <Button
-                    onClick={() => handleEncryptAndCopy(item)}
-                    variant="default"
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">
+              Welcome, {session?.user?.name ?? "Guest"}!
+            </CardTitle>
+            <p className="text-center text-muted-foreground">
+              {status === "authenticated"
+                ? "This is your dashboard!"
+                : "Please sign up for power up with us!"}
+            </p>
+            {status === "unauthenticated" && (
+              <Link href={"/register"} className="flex justify-center mt-5">
+                <Button variant={"outline"}>Signup</Button>
+              </Link>
+            )}
+          </CardHeader>
+
+          {status === "authenticated" ? (
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                {CookiesData.map((item: CookieItem, idx: number) => (
+                  <Card
+                    key={idx}
+                    className="hover:shadow-lg transition-shadow duration-200"
                   >
-                    {item.title}
-                  </Button>
-                  {process.env.IS_PRODUCTION === "false" && (
-                    <Button
-                      onClick={() => handleDecryptAndCopy(item)}
-                      variant="outline"
-                    >
-                      Decrypt {item.title}
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <span>{item.title}</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Get access for {item.title.toLowerCase()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-3">
+                        <Button
+                          onClick={() => handleEncryptAndCopy(item)}
+                          disabled={isLoading}
+                          className="w-full"
+                        >
+                          <Unlock className="mr-2 h-4 w-4" />
+                          {isLoading ? "Processing..." : "Unlock Premium"}
+                        </Button>
+                        {process.env.IS_PRODUCTION !== "true" && (
+                          <Button
+                            onClick={() => handleDecryptAndCopy(item)}
+                            variant="outline"
+                            disabled={isLoading || !cookies}
+                            className="w-full"
+                          >
+                            <Lock className="mr-2 h-4 w-4" />
+                            {isLoading ? "Processing..." : "Decrypt & Copy"}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="text-sm text-muted-foreground">
+                      <p>Website URL: {item.targetUrl.split("//")[1]}</p>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          ) : (
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                {CookiesData.map((item: CookieItem, idx: number) => (
+                  <Card
+                    key={idx}
+                    className="hover:shadow-lg transition-shadow duration-200"
+                  >
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <span>{item.title}</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Get access for {item.title.toLowerCase()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-3">
+                        <Link href={"/register"}>
+                          <Button disabled={isLoading} className="w-full">
+                            <BadgeDollarSign className="mr-2 h-4 w-4" />
+                            {"Buy Premium"}
+                          </Button>
+                        </Link>
+                        {process.env.IS_PRODUCTION !== "true" && (
+                          <Button
+                            onClick={() => handleDecryptAndCopy(item)}
+                            variant="outline"
+                            disabled={isLoading || !cookies}
+                            className="w-full"
+                          >
+                            <Lock className="mr-2 h-4 w-4" />
+                            {isLoading ? "Processing..." : "Decrypt & Copy"}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="text-sm text-muted-foreground">
+                      <p>Website URL: {item.targetUrl.split("//")[1]}</p>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
       </div>
-      <Toaster />
+      <Toaster position="top-right" richColors />
     </div>
   );
 }
