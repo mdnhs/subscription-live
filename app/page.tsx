@@ -118,12 +118,14 @@ export default function Home() {
                 >
                   {item.title}
                 </Button>
-                {/* <Button
-                  onClick={() => handleDecryptAndCopy(item)}
-                  variant="outline"
-                >
-                  Decrypt {item.title} Cookies
-                </Button> */}
+                {process.env.IS_PRODUCTION === "false" && (
+                  <Button
+                    onClick={() => handleDecryptAndCopy(item)}
+                    variant="outline"
+                  >
+                    Decrypt {item.title}
+                  </Button>
+                )}
               </div>
             ))}
           </div>

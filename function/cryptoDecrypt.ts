@@ -16,7 +16,11 @@ export const encrypt = (text: string, encryptionKey: string) => {
     // Return IV concatenated with encrypted text (needed for decryption)
     return iv.toString('hex') + ':' + encryptedText;
   } catch (error) {
-    throw new Error(`Encryption failed: ${error.message}`);
+    if (error instanceof Error) {
+      throw new Error(`Encryption failed: ${error.message}`);
+    } else {
+      throw new Error('Encryption failed: Unknown error');
+    }
   }
 };
 
@@ -41,73 +45,10 @@ export const decrypt = (text: string, encryptionKey: string) => {
     
     return decryptedText;
   } catch (error) {
-    throw new Error(`Decryption failed: ${error.message}`);
-  }
-};
-
-
-export const infoFromDecryptData = (input: string) => {
-  try {
-    const keyValuePairs = input.split("&");
-    const result: { [key: string]: string } = {};
-
-    for (const pair of keyValuePairs) {
-      const [key, value] = pair.split("=");
-      result[key] = value;
+    if (error instanceof Error) {
+      throw new Error(`Decryption failed: ${error.message}`);
+    } else {
+      throw new Error('Decryption failed: Unknown error');
     }
-    return result;
-  } catch (error) {
-    return "";
-  }
-};
-
-export function extractCallbackUrlFromString(inputString: string) {
-  const callbackUrlPattern = /callBackUrl=([^&]+)/;
-  const match = inputString.match(callbackUrlPattern);
-
-  if (match) {
-    return match[1];
-  } else {
-    return null;
-  }
-}
-
-export const stringToBoolean = (input: string) => {
-  switch (input?.toLowerCase()?.trim()) {
-    case "True":
-    case "true":
-    case "yes":
-    case "1":
-      return true;
-
-    case "False":
-    case "false":
-    case "no":
-    case "0":
-    case null:
-    case undefined:
-      return false;
-
-    default:
-      return false;
-  }
-};
-
-export const encryptBase64 = (input: Object) => {
-  try {
-    const jsonString = JSON.stringify(input);
-    const buffer = Buffer.from(jsonString);
-    return buffer.toString("base64");
-  } catch (error) {
-    return "";
-  }
-};
-
-export const decryptBase64 = (input: any) => {
-  try {
-    const buffer = Buffer.from(input, "base64");
-    return JSON.parse(buffer.toString("utf-8"));
-  } catch (error) {
-    return "";
   }
 };
