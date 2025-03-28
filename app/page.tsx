@@ -6,6 +6,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { decrypt, encrypt } from "../function/cryptoDecrypt";
 import CookiesData from "../public/json/cookies.json";
+import { signOut, useSession } from "next-auth/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface CookieItem {
   title: string;
@@ -14,8 +17,36 @@ interface CookieItem {
 }
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const DECRYPT_PASS = process.env.DECRYPT_PASS;
   const [cookies, setCookies] = useState("");
+
+  const showSession = () => {
+    if (status === "authenticated") {
+      return (
+        <Button
+          variant={"outline"}
+          onClick={() => {
+            signOut({ redirect: false }).then(() => {
+              router.push("/");
+            });
+          }}
+        >
+          Sign Out
+        </Button>
+      );
+    } else if (status === "loading") {
+      return <span className="text-[#888] text-sm mt-7">Loading...</span>;
+    } else {
+      return (
+        <Link href="/login">
+          <Button variant={"outline"}>Sign In</Button>
+        </Link>
+      );
+    }
+  };
 
   // Function to handle encryption and copying for a specific cookie
   const handleEncryptAndCopy = (item: CookieItem) => {
@@ -105,31 +136,44 @@ export default function Home() {
       <div className="container mx-auto py-5">
         <div className="h-20 w-full flex items-center justify-between border rounded-full p-5 shadow-2xs">
           <div>Logo</div>
-          <ModeToggle />
-        </div>
-
-        <div className="py-5 flex flex-col justify-center items-center">
-          <div className="flex flex-col gap-2 mt-4">
-            {CookiesData.map((item: CookieItem, idx: number) => (
-              <div key={idx + "CookiesData"} className="flex gap-2">
-                <Button
-                  onClick={() => handleEncryptAndCopy(item)}
-                  variant="default"
-                >
-                  {item.title}
-                </Button>
-                {process.env.IS_PRODUCTION === "false" && (
-                  <Button
-                    onClick={() => handleDecryptAndCopy(item)}
-                    variant="outline"
-                  >
-                    Decrypt {item.title}
-                  </Button>
-                )}
-              </div>
-            ))}
+          <div className="flex items-center gap-5">
+            {showSession()}
+            <ModeToggle />
           </div>
         </div>
+        <div className="text-center py-5">
+          <h1 className="text-xl font-semibold">
+            Hello {session?.user?.name ?? "Guest"}!
+          </h1>
+          <p>
+            Welcome to{" "}
+            {status === "authenticated" ? "your dashboard" : "our website"}.
+          </p>
+        </div>
+        {status === "authenticated" && (
+          <div className="py-5 flex flex-col justify-center items-center">
+            <div className="flex flex-col gap-2 mt-4">
+              {CookiesData.map((item: CookieItem, idx: number) => (
+                <div key={idx + "CookiesData"} className="flex gap-2">
+                  <Button
+                    onClick={() => handleEncryptAndCopy(item)}
+                    variant="default"
+                  >
+                    {item.title}
+                  </Button>
+                  {process.env.IS_PRODUCTION === "false" && (
+                    <Button
+                      onClick={() => handleDecryptAndCopy(item)}
+                      variant="outline"
+                    >
+                      Decrypt {item.title}
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <Toaster />
     </div>
