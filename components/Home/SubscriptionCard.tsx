@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -10,6 +10,8 @@ import {
 import { Button } from "../ui/button";
 import { BadgeDollarSign, Lock, Unlock } from "lucide-react";
 import Link from "next/link";
+import { decrypt, encrypt } from "@/function/cryptoDecrypt";
+import { toast } from "sonner";
 
 interface CookieItem {
   _id: string;
@@ -19,17 +21,13 @@ interface CookieItem {
 }
 
 interface Props {
-  item: {
-    _id: string;
-    title: string;
-    targetUrl: string;
-  };
+  item: CookieItem;
   isLoading: boolean;
   isAuthenticated: boolean;
   isProduction: boolean;
-  handleEncryptAndCopy: (item: CookieItem) => Promise<void>;
-  handleDecryptAndCopy: (item: CookieItem) => Promise<void>;
   cookies?: string;
+  setCookies: (cookies: string) => void;
+  setIsLoading: (isLoading: boolean) => void;
 }
 
 const SubscriptionCard = ({
@@ -38,9 +36,65 @@ const SubscriptionCard = ({
   isAuthenticated,
   isProduction,
   cookies,
-  handleEncryptAndCopy,
-  handleDecryptAndCopy,
+  setCookies,
+  setIsLoading,
 }: Props) => {
+  const DECRYPT_PASS = process.env.DECRYPT_PASS ?? "";
+
+  const handleEncryptAndCopy = useCallback(
+    async (item: CookieItem) => {
+      setIsLoading(true);
+      try {
+        const cookieToEncrypt =
+          typeof item.json === "string" ? item.json : JSON.stringify(item.json);
+        const encryptedCookies = encrypt(cookieToEncrypt, DECRYPT_PASS);
+        setCookies(encryptedCookies);
+
+        await navigator.clipboard.writeText(encryptedCookies);
+        toast.success(`Encrypted ${item.title} cookies copied!`, {
+          description: "Successfully copied to clipboard",
+        });
+        window.open(item.targetUrl, "_blank");
+      } catch (error) {
+        toast.error(`Failed to encrypt ${item.title}`, {
+          description: "Please try again or install our extension",
+        });
+        console.error("Encryption error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [DECRYPT_PASS, setCookies, setIsLoading]
+  );
+
+  const handleDecryptAndCopy = useCallback(
+    async (item: CookieItem) => {
+      if (!cookies) {
+        toast.error("No encrypted cookies", {
+          description: "Please encrypt cookies first",
+        });
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const decryptedCookies = decrypt(cookies, DECRYPT_PASS);
+        await navigator.clipboard.writeText(decryptedCookies);
+        toast.success(`Decrypted ${item.title} cookies copied!`, {
+          description: "Successfully copied to clipboard",
+        });
+      } catch (error) {
+        toast.error(`Failed to decrypt ${item.title}`, {
+          description: "Invalid encryption key or corrupted data",
+        });
+        console.error("Decryption error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [cookies, DECRYPT_PASS, setIsLoading]
+  );
+
   return (
     <Card
       key={item._id}
@@ -58,9 +112,7 @@ const SubscriptionCard = ({
         <div className="flex flex-col gap-3">
           {isAuthenticated ? (
             <Button
-              onClick={() =>
-                handleEncryptAndCopy({ ...item, json: [] })
-              }
+              onClick={() => handleEncryptAndCopy(item)}
               disabled={isLoading}
               className="w-full"
             >
@@ -77,7 +129,7 @@ const SubscriptionCard = ({
           )}
           {!isProduction && (
             <Button
-              onClick={() => handleDecryptAndCopy({ ...item, json: [] })}
+              onClick={() => handleDecryptAndCopy(item)}
               variant="outline"
               disabled={isLoading || !cookies}
               className="w-full"
