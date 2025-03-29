@@ -31,8 +31,7 @@ export async function fetchSubscriptions(
 ): Promise<SubscriptionResponse> {
   try {
     // Dynamically determine the base URL
-    const baseUrl =
-      process.env.PUBLIC_BASE_URL ?? "http://localhost:3000"; // Fallback to localhost in dev
+    const baseUrl = process.env.PUBLIC_BASE_URL; // Fallback to localhost in dev
     const url = new URL(`${baseUrl}/api/subscriptions`);
 
     // Set query parameters if provided
