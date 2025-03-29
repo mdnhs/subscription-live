@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,12 +12,12 @@ import {
 import { BadgeDollarSign, Lock, Unlock } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { decrypt, encrypt } from "../function/cryptoDecrypt";
-import CookiesData from "../public/json/cookies.json";
 
 interface CookieItem {
+  _id: string;
   title: string;
   targetUrl: string;
   json: { name: string; value: string }[] | string;
@@ -26,7 +27,32 @@ export default function Home() {
   const { data: session, status } = useSession();
   const [cookies, setCookies] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [subscriptions, setSubscriptions] = useState<CookieItem[]>([]);
   const DECRYPT_PASS = process.env.DECRYPT_PASS;
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchSubscriptions();
+    }
+  }, [status]);
+
+  const fetchSubscriptions = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/subscriptions");
+      if (!res.ok) throw new Error("Failed to fetch subscriptions");
+
+      const data = await res.json();
+      setSubscriptions(data.data);
+    } catch (error) {
+      toast.error("Failed to load subscriptions", {
+        description: "Please try again later",
+      });
+      console.error("Fetch error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleEncryptAndCopy = async (item: CookieItem) => {
     setIsLoading(true);
@@ -109,56 +135,64 @@ export default function Home() {
 
           {status === "authenticated" ? (
             <CardContent className="space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                {CookiesData.map((item: CookieItem, idx: number) => (
-                  <Card
-                    key={idx}
-                    className="hover:shadow-lg transition-shadow duration-200"
-                  >
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <span>{item.title}</span>
-                      </CardTitle>
-                      <CardDescription>
-                        Get access for {item.title.toLowerCase()}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-col gap-3">
-                        <Button
-                          onClick={() => handleEncryptAndCopy(item)}
-                          disabled={isLoading}
-                          className="w-full"
-                        >
-                          <Unlock className="mr-2 h-4 w-4" />
-                          {isLoading ? "Processing..." : "Unlock Premium"}
-                        </Button>
-                        {process.env.IS_PRODUCTION !== "true" && (
+              {isLoading && subscriptions.length === 0 ? (
+                <p className="text-center">Loading subscriptions...</p>
+              ) : subscriptions.length === 0 ? (
+                <p className="text-center text-muted-foreground">
+                  No subscriptions available.
+                </p>
+              ) : (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                  {subscriptions.map((item) => (
+                    <Card
+                      key={item._id}
+                      className="hover:shadow-lg transition-shadow duration-200"
+                    >
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <span>{item.title}</span>
+                        </CardTitle>
+                        <CardDescription>
+                          Get access for {item.title.toLowerCase()}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-col gap-3">
                           <Button
-                            onClick={() => handleDecryptAndCopy(item)}
-                            variant="outline"
-                            disabled={isLoading || !cookies}
+                            onClick={() => handleEncryptAndCopy(item)}
+                            disabled={isLoading}
                             className="w-full"
                           >
-                            <Lock className="mr-2 h-4 w-4" />
-                            {isLoading ? "Processing..." : "Decrypt & Copy"}
+                            <Unlock className="mr-2 h-4 w-4" />
+                            {isLoading ? "Processing..." : "Unlock Premium"}
                           </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="text-sm text-muted-foreground">
-                      <p>Website URL: {item.targetUrl.split("//")[1]}</p>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+                          {process.env.IS_PRODUCTION !== "true" && (
+                            <Button
+                              onClick={() => handleDecryptAndCopy(item)}
+                              variant="outline"
+                              disabled={isLoading || !cookies}
+                              className="w-full"
+                            >
+                              <Lock className="mr-2 h-4 w-4" />
+                              {isLoading ? "Processing..." : "Decrypt & Copy"}
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                      <CardFooter className="text-sm text-muted-foreground">
+                        <p>Website URL: {item.targetUrl.split("//")[1]}</p>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           ) : (
             <CardContent className="space-y-6">
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                {CookiesData.map((item: CookieItem, idx: number) => (
+                {subscriptions.map((item) => (
                   <Card
-                    key={idx}
+                    key={item._id}
                     className="hover:shadow-lg transition-shadow duration-200"
                   >
                     <CardHeader>

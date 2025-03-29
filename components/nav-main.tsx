@@ -30,8 +30,13 @@ export function NavMain({
               tooltip="Quick Create"
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear cursor-pointer"
             >
-              <IconCirclePlusFilled />
-              <span>Quick Create</span>
+              <Link
+                href={"/admin/create"}
+                className="flex gap-2 items-center font-semibold"
+              >
+                <IconCirclePlusFilled size={16} />
+                <span>Quick Create</span>
+              </Link>
             </SidebarMenuButton>
             <Button
               size="icon"
@@ -47,7 +52,10 @@ export function NavMain({
           {items.map((item) => (
             <Link key={item.title} href={item.url}>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip={item.title} className="cursor-pointer">
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  className="cursor-pointer"
+                >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                 </SidebarMenuButton>
