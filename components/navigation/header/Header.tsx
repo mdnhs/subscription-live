@@ -53,7 +53,7 @@ const Header = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-4">
             {session?.user?.role === "admin" && (
-              <Link href="/admin-dashboard">
+              <Link href="/admin">
                 <Button variant="ghost">Admin</Button>
               </Link>
             )}
