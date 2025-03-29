@@ -1,22 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton"; // Add this import
-import { BadgeDollarSign, Lock, Unlock } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { Session } from "next-auth";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { decrypt, encrypt } from "../../function/cryptoDecrypt";
+import SubscriptionCard from "./SubscriptionCard";
+import SubscriptionSkeletonCard from "./SubscriptionSkeletonCard";
 
 interface CookieItem {
   _id: string;
@@ -54,150 +48,89 @@ export default function HomeClient({
   );
   const DECRYPT_PASS = process.env.DECRYPT_PASS ?? "";
 
-  const fetchSubscriptions = useCallback(async (page: number, limit: number) => {
-    try {
+  const fetchSubscriptions = useCallback(
+    async (page: number, limit: number) => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(
+          `/api/subscriptions?page=${page}&limit=${limit}`
+        );
+
+        if (!res.ok) throw new Error("Failed to fetch subscriptions");
+
+        const data: { data: CookieItem[]; pagination?: Pagination } =
+          await res.json();
+        setSubscriptions(data.data);
+        if (data.pagination) setPagination(data.pagination);
+      } catch (error) {
+        toast.error("Failed to load subscriptions", {
+          description: "Please try again later",
+        });
+        console.error("Fetch error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const handleEncryptAndCopy = useCallback(
+    async (item: CookieItem) => {
       setIsLoading(true);
-      const res = await fetch(`/api/subscriptions?page=${page}&limit=${limit}`);
-      
-      if (!res.ok) throw new Error("Failed to fetch subscriptions");
+      try {
+        const cookieToEncrypt =
+          typeof item.json === "string" ? item.json : JSON.stringify(item.json);
+        const encryptedCookies = encrypt(cookieToEncrypt, DECRYPT_PASS);
+        setCookies(encryptedCookies);
 
-      const data: { data: CookieItem[]; pagination?: Pagination } = await res.json();
-      setSubscriptions(data.data);
-      if (data.pagination) setPagination(data.pagination);
-    } catch (error) {
-      toast.error("Failed to load subscriptions", {
-        description: "Please try again later",
-      });
-      console.error("Fetch error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        await navigator.clipboard.writeText(encryptedCookies);
+        toast.success(`Encrypted ${item.title} cookies copied!`, {
+          description: "Successfully copied to clipboard",
+        });
+        window.open(item.targetUrl, "_blank");
+      } catch (error) {
+        toast.error(`Failed to encrypt ${item.title}`, {
+          description: "Please try again or install our extension",
+        });
+        console.error("Encryption error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [DECRYPT_PASS]
+  );
 
-  const handleEncryptAndCopy = useCallback(async (item: CookieItem) => {
-    setIsLoading(true);
-    try {
-      const cookieToEncrypt =
-        typeof item.json === "string" ? item.json : JSON.stringify(item.json);
-      const encryptedCookies = encrypt(cookieToEncrypt, DECRYPT_PASS);
-      setCookies(encryptedCookies);
+  const handleDecryptAndCopy = useCallback(
+    async (item: CookieItem) => {
+      if (!cookies) {
+        toast.error("No encrypted cookies", {
+          description: "Please encrypt cookies first",
+        });
+        return;
+      }
 
-      await navigator.clipboard.writeText(encryptedCookies);
-      toast.success(`Encrypted ${item.title} cookies copied!`, {
-        description: "Successfully copied to clipboard",
-      });
-      window.open(item.targetUrl, "_blank");
-    } catch (error) {
-      toast.error(`Failed to encrypt ${item.title}`, {
-        description: "Please try again or install our extension",
-      });
-      console.error("Encryption error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [DECRYPT_PASS]);
-
-  const handleDecryptAndCopy = useCallback(async (item: CookieItem) => {
-    if (!cookies) {
-      toast.error("No encrypted cookies", {
-        description: "Please encrypt cookies first",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const decryptedCookies = decrypt(cookies, DECRYPT_PASS);
-      await navigator.clipboard.writeText(decryptedCookies);
-      toast.success(`Decrypted ${item.title} cookies copied!`, {
-        description: "Successfully copied to clipboard",
-      });
-    } catch (error) {
-      toast.error(`Failed to decrypt ${item.title}`, {
-        description: "Invalid encryption key or corrupted data",
-      });
-      console.error("Decryption error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [cookies, DECRYPT_PASS]);
+      setIsLoading(true);
+      try {
+        const decryptedCookies = decrypt(cookies, DECRYPT_PASS);
+        await navigator.clipboard.writeText(decryptedCookies);
+        toast.success(`Decrypted ${item.title} cookies copied!`, {
+          description: "Successfully copied to clipboard",
+        });
+      } catch (error) {
+        toast.error(`Failed to decrypt ${item.title}`, {
+          description: "Invalid encryption key or corrupted data",
+        });
+        console.error("Decryption error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [cookies, DECRYPT_PASS]
+  );
 
   const currentSession = clientSession ?? session;
   const isAuthenticated = status === "authenticated";
   const isProduction = process.env.IS_PRODUCTION === "true";
-
-  const renderSkeletonCard = () => (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Skeleton className="h-6 w-32" />
-        </CardTitle>
-        <CardDescription>
-          <Skeleton className="h-4 w-48" />
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-10 w-full" />
-          {!isProduction && <Skeleton className="h-10 w-full" />}
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Skeleton className="h-4 w-36" />
-      </CardFooter>
-    </Card>
-  );
-
-  const renderSubscriptionCard = (item: CookieItem) => (
-    <Card
-      key={item._id}
-      className="hover:shadow-lg transition-shadow duration-200"
-    >
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <span>{item.title}</span>
-        </CardTitle>
-        <CardDescription>
-          Get access for {item.title.toLowerCase()}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-3">
-          {isAuthenticated ? (
-            <Button
-              onClick={() => handleEncryptAndCopy(item)}
-              disabled={isLoading}
-              className="w-full"
-            >
-              <Unlock className="mr-2 h-4 w-4" />
-              {isLoading ? "Processing..." : "Unlock Premium"}
-            </Button>
-          ) : (
-            <Link href="/register">
-              <Button disabled={isLoading} className="w-full">
-                <BadgeDollarSign className="mr-2 h-4 w-4" />
-                Buy Premium
-              </Button>
-            </Link>
-          )}
-          {!isProduction && (
-            <Button
-              onClick={() => handleDecryptAndCopy(item)}
-              variant="outline"
-              disabled={isLoading || !cookies}
-              className="w-full"
-            >
-              <Lock className="mr-2 h-4 w-4" />
-              {isLoading ? "Processing..." : "Decrypt & Copy"}
-            </Button>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className="text-sm text-muted-foreground">
-        <p>Website URL: {item.targetUrl.split("//")[1]}</p>
-      </CardFooter>
-    </Card>
-  );
 
   return (
     <div className="min-h-screen">
@@ -231,7 +164,9 @@ export default function HomeClient({
             {isLoading && subscriptions.length === 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index}>{renderSkeletonCard()}</div>
+                  <div key={index + "Array"}>
+                    <SubscriptionSkeletonCard isProduction={isProduction} />
+                  </div>
                 ))}
               </div>
             ) : subscriptions.length === 0 ? (
@@ -241,7 +176,20 @@ export default function HomeClient({
             ) : (
               <>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                  {subscriptions.map(renderSubscriptionCard)}
+                  {subscriptions.map((item, idx) => {
+                    return (
+                      <SubscriptionCard
+                        key={idx + "subscriptions"}
+                        item={item}
+                        isLoading={isLoading}
+                        isAuthenticated={isAuthenticated}
+                        isProduction={isProduction}
+                        cookies={cookies}
+                        handleEncryptAndCopy={handleEncryptAndCopy}
+                        handleDecryptAndCopy={handleDecryptAndCopy}
+                      />
+                    );
+                  })}
                 </div>
                 {pagination && pagination.pages > 1 && (
                   <div className="flex justify-center gap-4 mt-6">
@@ -249,7 +197,10 @@ export default function HomeClient({
                       variant="outline"
                       disabled={pagination.page <= 1 || isLoading}
                       onClick={() =>
-                        fetchSubscriptions(pagination.page - 1, pagination.limit)
+                        fetchSubscriptions(
+                          pagination.page - 1,
+                          pagination.limit
+                        )
                       }
                     >
                       Previous
@@ -259,9 +210,14 @@ export default function HomeClient({
                     </span>
                     <Button
                       variant="outline"
-                      disabled={pagination.page >= pagination.pages || isLoading}
+                      disabled={
+                        pagination.page >= pagination.pages || isLoading
+                      }
                       onClick={() =>
-                        fetchSubscriptions(pagination.page + 1, pagination.limit)
+                        fetchSubscriptions(
+                          pagination.page + 1,
+                          pagination.limit
+                        )
                       }
                     >
                       Next
