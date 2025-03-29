@@ -124,7 +124,7 @@ export default function HomeClient({
 
   const currentSession = clientSession ?? session;
   const isAuthenticated = status === "authenticated";
-  const isProduction = process.env.NEXT_PUBLIC_IS_PRODUCTION === "true";
+  const isProduction = process.env.IS_PRODUCTION === "true";
 
   const renderSkeletonCard = () => (
     <Card className="hover:shadow-lg transition-shadow duration-200">
