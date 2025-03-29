@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     IS_PRODUCTION: process.env.IS_PRODUCTION,
     MONGODB_URI: process.env.MONGODB_URI,
     AUTH_SECRET: process.env.AUTH_SECRET,
+    PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL,
   },
 };
 
