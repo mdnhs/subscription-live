@@ -58,7 +58,9 @@ const SubscriptionCard = ({
         <div className="flex flex-col gap-3">
           {isAuthenticated ? (
             <Button
-              onClick={() => handleEncryptAndCopy(item)}
+              onClick={() =>
+                handleEncryptAndCopy({ ...item, json: [] })
+              }
               disabled={isLoading}
               className="w-full"
             >
@@ -75,7 +77,7 @@ const SubscriptionCard = ({
           )}
           {!isProduction && (
             <Button
-              onClick={() => handleDecryptAndCopy(item)}
+              onClick={() => handleDecryptAndCopy({ ...item, json: [] })}
               variant="outline"
               disabled={isLoading || !cookies}
               className="w-full"
