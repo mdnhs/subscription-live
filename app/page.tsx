@@ -8,14 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Toaster } from "@/components/ui/sonner";
 import { BadgeDollarSign, Lock, Unlock } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { decrypt, encrypt } from "../function/cryptoDecrypt";
 import CookiesData from "../public/json/cookies.json";
-import Link from "next/link";
 
 interface CookieItem {
   title: string;
@@ -201,7 +200,6 @@ export default function Home() {
           )}
         </Card>
       </div>
-      <Toaster position="top-right" richColors />
     </div>
   );
 }
