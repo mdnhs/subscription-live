@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import NodeCache from "node-cache";
 
 interface FetchOptions {
   page?: number;
@@ -26,21 +27,22 @@ interface Pagination {
   pages: number;
 }
 
+const cache = new NodeCache({ stdTTL: 60 }); // Cache for 60 seconds
+
 export async function fetchSubscriptions(
   options: FetchOptions = {}
 ): Promise<SubscriptionResponse> {
+  const cacheKey = `subscriptions_${options.page ?? 1}_${options.limit ?? 10}`;
+  const cachedData = cache.get<SubscriptionResponse>(cacheKey);
+
+  if (cachedData) return cachedData; // Return cached data instantly
+
   try {
-    // Dynamically determine the base URL
-    const baseUrl = process.env.PUBLIC_BASE_URL; // Fallback to localhost in dev
+    const baseUrl = process.env.PUBLIC_BASE_URL;
     const url = new URL(`${baseUrl}/api/subscriptions`);
+    if (options.page) url.searchParams.set("page", options.page.toString());
+    if (options.limit) url.searchParams.set("limit", options.limit.toString());
 
-    // Set query parameters if provided
-    if (options.page !== undefined)
-      url.searchParams.set("page", options.page.toString());
-    if (options.limit !== undefined)
-      url.searchParams.set("limit", options.limit.toString());
-
-    // Get cookies for the request
     const cookieStore = await cookies();
     const cookieHeader = cookieStore
       .getAll()
@@ -48,17 +50,14 @@ export async function fetchSubscriptions(
       .join("; ");
 
     const response = await fetch(url.toString(), {
-      headers: {
-        Cookie: cookieHeader,
-      },
-      next: { revalidate: 60 }, // Optional: cache for 60 seconds
+      headers: { Cookie: cookieHeader },
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch subscriptions: ${response.statusText}`);
-    }
+    if (!response.ok) throw new Error(response.statusText);
 
-    return await response.json();
+    const data = await response.json();
+    cache.set(cacheKey, data); // Cache the result
+    return data;
   } catch (error) {
     console.error("fetchSubscriptions error:", error);
     return { data: [], error: "Failed to fetch subscriptions" };
