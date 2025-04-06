@@ -15,9 +15,9 @@ export async function POST(req: NextRequest) {
     const data = dataConfig({
       total_amount: Number(formData.amount),
       tran_id: transactionId,
-      success_url: `http://localhost:3000/payment-confirm?tran_id=${transactionId}`,
-      fail_url: `http://localhost:3000/payment-failed`,
-      cancel_url: `http://localhost:3000/payment-cancelled`,
+      success_url: `${process.env.NEXTAUTH_URL}/payment-confirm?tran_id=${transactionId}`,
+      fail_url: `${process.env.NEXTAUTH_URL}/payment-failed`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/payment-cancelled`,
       product_name: formData.product_name,
       product_category: formData.product_category,
       cus_name: formData.customer_name,

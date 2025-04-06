@@ -92,7 +92,7 @@ const CheckoutForm = ({ amount }: Props) => {
         clientSecret,
         elements,
         confirmParams: {
-          return_url: "http://localhost:3000/payment-confirm",
+          return_url: `${process.env.NEXTAUTH_URL}/payment-confirm`,
         },
       });
 
