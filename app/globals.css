@@ -43,6 +43,7 @@
   --radius-xl: calc(var(--radius) + 4px);
   --color-brand-1: oklch(0.62 0.2063 263.43);
   --color-brand-2: oklch(0.5 0.2063 263.43);
+  --container: 1280px;
 }
 
 :root {
@@ -121,4 +122,9 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+@utility container {
+  margin-inline: auto;
+  max-width: var(--container);
+  padding-inline: 1rem;
 }

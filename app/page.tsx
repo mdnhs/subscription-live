@@ -1,53 +1,24 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { fetchSubscriptions } from "./lib/api";
-import HomeClient from "@/components/Home/HomeClient";
+import ProductSection from "@/_components/products/ProductSection";
+import Image from "next/image";
+import React from "react";
 
-// Type for the expected return value of fetchSubscriptions
-interface FetchSubscriptionsResponse {
-  data: CookieItem[];
-  pagination?: Pagination;
-}
-
-// Define CookieItem and Pagination interfaces
-interface CookieItem {
-  _id: string;
-  title: string;
-  targetUrl: string;
-  json: { name: string; value: string }[] | string;
-}
-
-interface Pagination {
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-}
-
-export default async function Home({
-  searchParams: searchParamsPromise,
-}: {
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const session = await getServerSession(authOptions);
-  const searchParams = await searchParamsPromise; // Await the Promise
-
-  // Get pagination params from URL
-  const page = searchParams?.page ? Number(searchParams.page) : 1;
-  const limit = searchParams?.limit ? Number(searchParams.limit) : 10;
-
-  // Fetch subscriptions with pagination
-  const { data: subscriptions, pagination }: FetchSubscriptionsResponse =
-    await fetchSubscriptions({
-      page,
-      limit,
-    });
-
+const Home = () => {
   return (
-    <HomeClient
-      session={session}
-      initialSubscriptions={subscriptions || []}
-      initialPagination={pagination}
-    />
+    <div className="container py-5 space-y-5">
+      <div className=" bg-background/95 dark:bg-black h-96 w-full rounded-2xl flex justify-center items-center relative">
+        {" "}
+        <Image
+          src={"/placeholder.svg"}
+          fill
+          alt=""
+          className="object-cover rounded-2xl"
+        />
+      </div>
+      <div>
+        <ProductSection />
+      </div>
+    </div>
   );
-}
+};
+
+export default Home;

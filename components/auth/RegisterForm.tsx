@@ -1,62 +1,78 @@
 "use client";
-import { register } from "@/actions/register";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { RegisterFormData, registerSchema } from "@/lib/validations/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useState } from "react";
+import { useForm } from "react-hook-form";
 
-export function RegisterForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const [error, setError] = useState<string>();
-  const [isLoading, setIsLoading] = useState(false);
+export function RegisterForm({ className, ...props }: { className?: string }) {
   const router = useRouter();
-  const ref = useRef<HTMLFormElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      const formData = new FormData(ref.current!);
-      const r = await register({
-        email: (formData.get("email") as string) || "",
-        password: (formData.get("password") as string) || "",
-        name: (formData.get("name") as string) || "",
-        role: (formData.get("role") as string) || "user",
-      });
+  const apiUrl = process.env.NEXT_PUBLIC_REST_API_URL;
 
-      ref.current?.reset();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
-      if (r?.error) {
-        setError(r.error);
-        toast.error(`Message`, {
-          description: r.error,
+  const onSubmit = useCallback(
+    async (data: RegisterFormData) => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await axios.post(`${apiUrl}/api/auth/local/register`, {
+          username: data.username,
+          email: data.email,
+          password: data.password,
         });
-      } else {
-        toast.success(`Message`, {
-          description: "Successfully signed up!",
-        });
-        return router.push("/login");
+
+        if (response.status === 200) {
+          router.push("/login?registered=true");
+        }
+      } catch (error: unknown) {
+        console.error("Registration error:", error);
+        if (axios.isAxiosError(error) && error.response?.data?.error?.message) {
+          setError(error.response.data.error.message);
+        } else {
+          setError("Registration failed. Please try again.");
+        }
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [router, apiUrl]
+  );
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form ref={ref} className="p-6 md:p-8" onSubmit={handleSubmit}>
+          <form
+            className="p-6 md:p-8"
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+          >
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="mb-6">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -67,38 +83,77 @@ export function RegisterForm({
                   Create a new account to get started
                 </p>
               </div>
+
               <div className="grid gap-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="name"
+                  id="username"
                   type="text"
-                  name="name"
-                  placeholder="Enter your full name"
-                  required
+                  placeholder="Enter your username"
+                  {...register("username")}
+                  disabled={isLoading || isSubmitting}
+                  className={errors.username ? "border-red-500" : ""}
                 />
+                {errors.username && (
+                  <p className="text-sm text-red-500">
+                    {errors.username.message}
+                  </p>
+                )}
               </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  name="email"
                   placeholder="m@example.com"
-                  required
+                  {...register("email")}
+                  disabled={isLoading || isSubmitting}
+                  className={errors.email ? "border-red-500" : ""}
                 />
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
               </div>
+
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
-                <Input id="password" type="password" name="password" required />
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  {...register("password")}
+                  disabled={isLoading || isSubmitting}
+                  className={errors.password ? "border-red-500" : ""}
+                />
+                {errors.password && (
+                  <p className="text-sm text-red-500">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  {...register("confirmPassword")}
+                  disabled={isLoading || isSubmitting}
+                  className={errors.confirmPassword ? "border-red-500" : ""}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-500">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
               <Button
                 type="submit"
-                className="w-full bg-brand-1 hover:bg-brand-2"
-                disabled={isLoading}
+                className="w-full bg-brand-1 hover:bg-brand-2 disabled:opacity-50"
+                disabled={isLoading || isSubmitting}
               >
-                {isLoading ? "Signing up..." : "Sign Up"}
+                {isLoading || isSubmitting ? "Signing up..." : "Sign Up"}
               </Button>
 
               <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
@@ -106,9 +161,14 @@ export function RegisterForm({
                   Or continue with
                 </span>
               </div>
+
               <div className="grid grid-cols-2 gap-4 pointer-events-none opacity-30">
                 <Button variant="outline" className="w-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-5 h-5 mr-2"
+                  >
                     <path
                       d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
                       fill="currentColor"
@@ -117,7 +177,11 @@ export function RegisterForm({
                   <span className="sr-only">Register with Google</span>
                 </Button>
                 <Button variant="outline" className="w-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-5 h-5 mr-2"
+                  >
                     <path
                       d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"
                       fill="currentColor"
@@ -126,6 +190,7 @@ export function RegisterForm({
                   <span className="sr-only">Register with Meta</span>
                 </Button>
               </div>
+
               <div className="text-center text-sm">
                 Already have an account?{" "}
                 <Link href="/login" className="underline underline-offset-4">
@@ -134,16 +199,18 @@ export function RegisterForm({
               </div>
             </div>
           </form>
+
           <div className="relative hidden bg-muted md:block rounded-l-xl overflow-hidden">
             <Image
               src="/bg/auth-bg.svg"
-              alt="Image"
+              alt="Registration background"
               fill
-              className="inset-0 h-full w-full object-contain dark:brightness-[0.2] "
+              className="inset-0 h-full w-full object-contain dark:brightness-[0.2]"
             />
           </div>
         </CardContent>
       </Card>
+
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
         By clicking continue, you agree to our{" "}
         <Link href="#">Terms of Service</Link> and{" "}

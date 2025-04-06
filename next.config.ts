@@ -2,12 +2,30 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
+    ],
+  },
   env: {
     DECRYPT_PASS: process.env.DECRYPT_PASS,
     IS_PRODUCTION: process.env.IS_PRODUCTION,
-    MONGODB_URI: process.env.MONGODB_URI,
     AUTH_SECRET: process.env.AUTH_SECRET,
-    PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NEXT_PUBLIC_REST_API_KEY: process.env.NEXT_PUBLIC_REST_API_KEY,
+    NEXT_PUBLIC_REST_API_URL: process.env.NEXT_PUBLIC_REST_API_URL,
+    NEXT_PUBLIC_STRIPE_PUBLISHER_KEY:
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHER_KEY,
+    NEXT_PUBLIC_STRIPE_SECRET_KEY: process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY,
+    STORE_ID: process.env.STORE_ID,
+    STORE_PASSWORD: process.env.STORE_PASSWORD,
   },
 };
 
