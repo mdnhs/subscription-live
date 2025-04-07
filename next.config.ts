@@ -16,7 +16,6 @@ const nextConfig: NextConfig = {
   },
   env: {
     DECRYPT_PASS: process.env.DECRYPT_PASS,
-    IS_PRODUCTION: process.env.IS_PRODUCTION,
     AUTH_SECRET: process.env.AUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXT_PUBLIC_REST_API_KEY: process.env.NEXT_PUBLIC_REST_API_KEY,
