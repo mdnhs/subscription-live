@@ -22,6 +22,8 @@ const CheckoutSection = () => {
   const [selectedPayment, setSelectedPayment] = useState("stripe");
   const [isProcessing, setIsProcessing] = useState(false);
   const [products, setProducts] = useState<string[]>([]);
+  const [productCategory, setProductCategory] = useState<string>("");
+  const [productMonth, setProductMonth] = useState<number>(0);
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -38,15 +40,16 @@ const CheckoutSection = () => {
           username: session?.user?.name,
           amount: Number(total),
           products: products,
+          category: productCategory,
+          month: productMonth,
         },
         productId: "",
         quantity: 0,
       });
 
       // Delete all cart items
-      const deletePromises = carts?.map((item) =>
-        deleteCart(item?.documentId)
-      ) || [];
+      const deletePromises =
+        carts?.map((item) => deleteCart(item?.documentId)) || [];
       await Promise.all(deletePromises);
       console.log("All cart items deleted successfully");
 
@@ -62,8 +65,16 @@ const CheckoutSection = () => {
   };
 
   useEffect(() => {
-    const ProductsList = carts?.map((item) => item?.products[0]?.id);
-    setProducts(ProductsList || []);
+    if (!carts?.length) {
+      setProducts([]);
+      setProductMonth(0);
+      setProductCategory("");
+      return;
+    }
+
+    setProducts(carts.map((item) => item?.products[0]?.documentId));
+    setProductCategory(carts[0]?.products[0]?.category || "");
+    setProductMonth(carts[0]?.products[0]?.month || 0);
   }, [carts]);
 
   useEffect(() => {
@@ -122,11 +133,10 @@ const CheckoutSection = () => {
       });
 
       const data = await response.json();
-
       if (response.ok && data.url) {
         // Ensure cart is updated before redirecting
         await createOrderAndUpdateCart();
-        window.location.href = data.url; // Redirect after cart is cleared
+        window.location.href = data.url; 
       } else {
         alert(data.message || "Payment initiation failed");
       }
