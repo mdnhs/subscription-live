@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const data = dataConfig({
       total_amount: Number(formData.amount),
       tran_id: transactionId,
-      success_url: `${process.env.NEXTAUTH_URL}/payment-confirm?tran_id=${transactionId}`,
+      success_url: `${process.env.NEXTAUTH_URL}/api/payment-confirm?tran_id=${transactionId}`, // Updated to API route
       fail_url: `${process.env.NEXTAUTH_URL}/payment-failed`,
       cancel_url: `${process.env.NEXTAUTH_URL}/payment-cancelled`,
       product_name: formData.product_name,
@@ -30,12 +30,12 @@ export async function POST(req: NextRequest) {
 
     if (!result.GatewayPageURL || result.status === "FAILED") {
       return NextResponse.json(
-        { message: result.failedreason },
+        { message: result.failedreason || "Payment initiation failed" },
         { status: 400 }
       );
     }
 
-    if (result.status === "SUCCESS") {
+    if (result.status === "SUCCESS" && typeof result.GatewayPageURL === "string") {
       return NextResponse.json({
         url: result.GatewayPageURL,
         transactionId,
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "Unknown error occurred" },
+      { message: "Invalid gateway URL returned" },
       { status: 500 }
     );
   } catch (error) {
@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
 export async function GET() {
   return NextResponse.json({ message: "Method not allowed" }, { status: 405 });
 }

@@ -30,25 +30,34 @@ const CheckoutSection = () => {
   }, [getCartItems, session?.user?.email]);
 
   const createOrderAndUpdateCart = async () => {
-    await createOrder({
-      data: {
-        email: session?.user?.email,
-        username: session?.user?.name,
-        amount: Number(total),
-        products: products,
-      },
-      productId: "",
-      quantity: 0,
-    });
+    try {
+      // Create the order
+      await createOrder({
+        data: {
+          email: session?.user?.email,
+          username: session?.user?.name,
+          amount: Number(total),
+          products: products,
+        },
+        productId: "",
+        quantity: 0,
+      });
 
-    await Promise.all(
-      carts?.map((item) => {
-        deleteCart(item?.documentId);
-      })
-    );
+      // Delete all cart items
+      const deletePromises = carts?.map((item) =>
+        deleteCart(item?.documentId)
+      ) || [];
+      await Promise.all(deletePromises);
+      console.log("All cart items deleted successfully");
 
-    if (session?.user?.email) {
-      getCartItems(session.user.email);
+      // Refresh cart state
+      if (session?.user?.email) {
+        await getCartItems(session.user.email);
+        console.log("Cart refreshed after deletion");
+      }
+    } catch (error) {
+      console.error("Error in createOrderAndUpdateCart:", error);
+      throw error; // Re-throw to handle in caller
     }
   };
 
@@ -99,8 +108,8 @@ const CheckoutSection = () => {
       amount: total.toString(),
       customer_name: session.user.name || "Customer",
       email: session.user.email,
-      phone: "01711111111", // Add phone if available in your session data
-      address: "Bangladesh", // Add address if available in your user data
+      phone: "01711111111",
+      address: "Bangladesh",
     };
 
     try {
@@ -113,10 +122,11 @@ const CheckoutSection = () => {
       });
 
       const data = await response.json();
-      await createOrderAndUpdateCart();
 
       if (response.ok && data.url) {
-        window.location.href = data.url;
+        // Ensure cart is updated before redirecting
+        await createOrderAndUpdateCart();
+        window.location.href = data.url; // Redirect after cart is cleared
       } else {
         alert(data.message || "Payment initiation failed");
       }
@@ -128,19 +138,17 @@ const CheckoutSection = () => {
     }
   };
 
+  // Rest of your component remains unchanged
   return (
     <div className="App">
       <div className="relative mx-auto w-full bg-background/95 rounded-2xl">
         <div className="grid min-h-screen grid-cols-10">
-          {/* Checkout Form */}
           <div className="col-span-full py-6 px-4 sm:py-12 lg:col-span-6 lg:py-24">
             <div className="mx-auto w-full max-w-lg">
               <h1 className="relative text-2xl font-medium sm:text-3xl">
                 Secure Checkout
                 <span className="mt-2 block h-1 w-10 bg-teal-600 sm:w-20 rounded-r-2xl"></span>
               </h1>
-
-              {/* Payment Method Selection */}
               <div className="mt-6">
                 <h2 className="text-lg font-medium mb-4">
                   Select Payment Method
@@ -162,8 +170,6 @@ const CheckoutSection = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Display checkout form based on selected payment */}
               {total > 0 ? (
                 <div className="mt-6">
                   {selectedPayment === "stripe" && (
@@ -172,11 +178,11 @@ const CheckoutSection = () => {
                     </Elements>
                   )}
                   {selectedPayment === "sslcommerz" && (
-                    <div className=" rounded">
+                    <div className="rounded">
                       <Button
                         onClick={handleSSLCommerzPayment}
                         disabled={isProcessing}
-                       className="w-full p-2 mt-4 text-white rounded-md hover:bg-teal-800 bg-teal-600"
+                        className="w-full p-2 mt-4 text-white rounded-md hover:bg-teal-800 bg-teal-600"
                       >
                         {isProcessing ? "Processing..." : "Pay with SSLCommerz"}
                       </Button>
@@ -207,14 +213,11 @@ const CheckoutSection = () => {
               )}
             </div>
           </div>
-
-          {/* Order Summary */}
           <div className="relative col-span-full flex flex-col py-6 pl-8 pr-4 sm:py-12 lg:col-span-4 lg:py-24">
             <h2 className="sr-only">Order summary</h2>
             <div>
               <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-teal-900 to-teal-600 opacity-95 rounded-r-2xl"></div>
             </div>
-
             <div className="relative">
               {!loading ? (
                 <ul className="space-y-5">
@@ -260,7 +263,6 @@ const CheckoutSection = () => {
                   />
                 </div>
               )}
-
               <div className="my-5 h-0.5 w-full bg-background/95 bg-opacity-30"></div>
               <div className="space-y-2">
                 <p className="flex justify-between text-lg font-bold text-white">
@@ -269,7 +271,6 @@ const CheckoutSection = () => {
                 </p>
               </div>
             </div>
-
             <div className="relative mt-10 text-white">
               <h3 className="mb-5 text-lg font-bold">Support</h3>
               <p className="text-sm font-semibold">
@@ -282,7 +283,6 @@ const CheckoutSection = () => {
                 Call us now for payment related issues
               </p>
             </div>
-
             <div className="relative mt-10 flex">
               <p className="flex flex-col">
                 <span className="text-sm font-bold text-white">
