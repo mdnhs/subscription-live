@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { BallTriangle } from "react-loader-spinner";
+import { FallbackImage } from "../container/FallbackImage";
 
 const CartSection = () => {
   const router = useRouter();
@@ -56,15 +57,13 @@ const CartSection = () => {
                 <ul className="space-y-4">
                   {carts?.map((item) => (
                     <li key={item.id} className="flex items-center gap-4">
-                      {item?.products[0]?.banner?.url && (
-                        <Image
-                          src={item?.products[0]?.banner?.url}
-                          alt=""
-                          height={100}
-                          width={100}
-                          className="h-16 w-[6rem] rounded object-cover"
-                        />
-                      )}
+                      <FallbackImage
+                        src={item?.products[0]?.banner?.url}
+                        alt=""
+                        height={100}
+                        width={100}
+                        imgClassName="h-16 w-[6rem] rounded object-cover"
+                      />
 
                       <div className="flex flex-col items-start">
                         <h3 className="text-sm text-start text-white line-clamp-1">

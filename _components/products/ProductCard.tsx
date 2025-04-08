@@ -1,17 +1,15 @@
 "use client";
 
-import { CalendarClock, List, ShoppingCart } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import React from "react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useCartStore } from "@/_store/CartStore";
+import { Product } from "@/_types/product";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/_store/CartStore";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { CalendarClock, ShoppingCart } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Product } from "@/_types/product";
+import { FallbackImage } from "../container/FallbackImage";
 
 const ProductCard = ({ product }: { product: Product }) => {
   const { addToCart, getCartItems } = useCartStore();
@@ -40,20 +38,16 @@ const ProductCard = ({ product }: { product: Product }) => {
   return (
     <Card className="group overflow-hidden border border-gray-50/20 bg-gray-800 text-white shadow-md hover:shadow-lg dark:bg-background/95 py-0 gap-0">
       {/* Image Section */}
-      <div className="relative h-[170px] w-full">
-        <Link
-          href={`/product-details/${product?.documentId}`}
-          className="block"
-        >
-          <Image
-            src={product?.banner?.url}
-            alt={`${product?.title} banner`}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-110"
-          />
-        </Link>
-      </div>
+
+      <Link href={`/product-details/${product?.documentId}`} className="block">
+        <FallbackImage
+          src={product?.banner?.url}
+          alt={`${product?.title} banner`}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          imgClassName="object-cover transition-transform duration-300 group-hover:scale-110"
+          className="h-[170px] w-full"
+        />
+      </Link>
 
       {/* Content Section */}
       <CardContent className="p-4">

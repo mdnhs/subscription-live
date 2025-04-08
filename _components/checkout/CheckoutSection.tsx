@@ -1,15 +1,16 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
-import { BallTriangle } from "react-loader-spinner";
 import { useCartStore } from "@/_store/CartStore";
-import { useSession } from "next-auth/react";
-import CheckoutForm from "./CheckoutForm";
-import Image from "next/image";
 import { useOrderStore } from "@/_store/OrderStore";
-import { Button } from "@/components/ui/button";
 import { useToolStore } from "@/_store/ToolStore";
+import { useUserStore } from "@/_store/UserStore";
+import { Button } from "@/components/ui/button";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { BallTriangle } from "react-loader-spinner";
+import CheckoutForm from "./CheckoutForm";
 
 const CheckoutSection = () => {
   const stripePromise = loadStripe(
@@ -19,6 +20,7 @@ const CheckoutSection = () => {
   const { carts, loading, getCartItems, deleteCart } = useCartStore();
   const { createOrder } = useOrderStore();
   const { tools, getToolItems } = useToolStore();
+  const { totalUsers, getTotalUsers } = useUserStore();
   const [total, setTotal] = useState(0);
   const [options, setOptions] = useState({});
   const [selectedPayment, setSelectedPayment] = useState("stripe");
@@ -32,9 +34,10 @@ const CheckoutSection = () => {
     if (session?.user?.email) {
       getCartItems(session.user.email);
       getToolItems();
+      getTotalUsers();
     }
-  }, [getCartItems, getToolItems, session?.user?.email]);
-  console.log(tools, "tools");
+  }, [getCartItems, getToolItems, getTotalUsers, session?.user?.email]);
+
   const createOrderAndUpdateCart = async () => {
     try {
       // Create the order
@@ -88,15 +91,27 @@ const CheckoutSection = () => {
     setProducts(carts.map((item) => item?.products[0]?.documentId));
     setProductCategory(cartCategory);
     setProductMonth(cartMonth);
-
     // Filter tools based on matching category and month
     const filteredTools = tools.filter(
       (tool) => tool?.category === cartCategory && tool?.month === cartMonth
     );
-    console.log(filteredTools, "filteredTools");
-    // Update grantedTools with the filtered results
-    setGrantedTools(filteredTools?.map((tool) => tool?.documentId));
-  }, [carts, tools]);
+
+    // Calculate which tool to assign based on the number of users
+    // For every 7 users, we rotate to the next tool
+    if (filteredTools?.length > 0 && (totalUsers ?? 0) > 0) {
+      // Calculate which tool to use based on user count
+      const toolIndex =
+        Math.floor((totalUsers ?? 0) / 10) % filteredTools?.length;
+
+      // Select just one tool based on the calculated index
+      const selectedTool = filteredTools[toolIndex]?.documentId;
+
+      // Set only the selected tool in the grantedTools array
+      setGrantedTools(selectedTool ? [selectedTool] : []);
+    } else {
+      setGrantedTools([]);
+    }
+  }, [carts, totalUsers, tools]);
 
   useEffect(() => {
     if (!loading) {
