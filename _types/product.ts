@@ -1,60 +1,67 @@
 // _types/Product.ts
 export interface Product {
+  id: string;
+  documentId: string;
+  title: string;
+  getAccessData: string;
+  targetUrl: string;
+  description: Array<{
+    type: string;
+    children: Array<{ type: string; text: string }>;
+  }>;
+  price: number;
+  month: number;
+  instantDelivery: boolean | null;
+  whatsIncluded: Array<{
+    type: string;
+    children: Array<{ type: string; text: string }>;
+  }>;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  banner: {
     id: string;
     documentId: string;
-    title: string;
-    getAccessData: string;
-    targetUrl: string;
-    description: Array<{
-      type: string;
-      children: Array<{ type: string; text: string }>;
-    }>;
-    price: number;
-    month: number;
-    instantDelivery: boolean | null;
-    whatsIncluded: Array<{
-      type: string;
-      children: Array<{ type: string; text: string }>;
-    }>;
-    category: string;
+    name: string;
+    alternativeText: string | null;
+    caption: string | null;
+    width: number;
+    height: number;
+    formats: {
+      thumbnail: { url: string; width: number; height: number };
+      large: { url: string; width: number; height: number };
+      medium: { url: string; width: number; height: number };
+      small: { url: string; width: number; height: number };
+    };
+    hash: string;
+    ext: string;
+    mime: string;
+    size: number;
+    url: string;
+    previewUrl: string | null;
+    provider: string;
+    provider_metadata: Record<string, unknown> | null;
     createdAt: string;
     updatedAt: string;
     publishedAt: string;
-    banner: {
-      id: string;
-      documentId: string;
-      name: string;
-      alternativeText: string | null;
-      caption: string | null;
-      width: number;
-      height: number;
-      formats: {
-        thumbnail: { url: string; width: number; height: number };
-        large: { url: string; width: number; height: number };
-        medium: { url: string; width: number; height: number };
-        small: { url: string; width: number; height: number };
-      };
-      hash: string;
-      ext: string;
-      mime: string;
-      size: number;
-      url: string;
-      previewUrl: string | null;
-      provider: string;
-      provider_metadata: Record<string, unknown> | null;
-      createdAt: string;
-      updatedAt: string;
-      publishedAt: string;
-    };
-    files: Record<string, unknown> | null;
-    orders: Array<{
-      id: string;
-      documentId: string;
-      email: string;
-      username: string;
-      amount: number;
-      createdAt: string;
-      updatedAt: string;
-      publishedAt: string;
-    }>;
-  }
+  };
+  files: Record<string, unknown> | null;
+  orders: Array<{
+    id: string;
+    documentId: string;
+    email: string;
+    username: string;
+    amount: number;
+    createdAt: string;
+    updatedAt: string;
+    publishedAt: string;
+  }>;
+}
+
+export interface ToolsResponse {
+  targetUrl: string;
+  category: string;
+  month: number;
+  toolData: string[];
+}

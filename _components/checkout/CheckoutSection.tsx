@@ -9,6 +9,7 @@ import CheckoutForm from "./CheckoutForm";
 import Image from "next/image";
 import { useOrderStore } from "@/_store/OrderStore";
 import { Button } from "@/components/ui/button";
+import { useToolStore } from "@/_store/ToolStore";
 
 const CheckoutSection = () => {
   const stripePromise = loadStripe(
@@ -17,20 +18,23 @@ const CheckoutSection = () => {
   const { data: session } = useSession();
   const { carts, loading, getCartItems, deleteCart } = useCartStore();
   const { createOrder } = useOrderStore();
+  const { tools, getToolItems } = useToolStore();
   const [total, setTotal] = useState(0);
   const [options, setOptions] = useState({});
   const [selectedPayment, setSelectedPayment] = useState("stripe");
   const [isProcessing, setIsProcessing] = useState(false);
   const [products, setProducts] = useState<string[]>([]);
+  const [grantedTools, setGrantedTools] = useState<string[]>([]);
   const [productCategory, setProductCategory] = useState<string>("");
   const [productMonth, setProductMonth] = useState<number>(0);
 
   useEffect(() => {
     if (session?.user?.email) {
       getCartItems(session.user.email);
+      getToolItems();
     }
-  }, [getCartItems, session?.user?.email]);
-
+  }, [getCartItems, getToolItems, session?.user?.email]);
+  console.log(tools, "tools");
   const createOrderAndUpdateCart = async () => {
     try {
       // Create the order
@@ -42,6 +46,7 @@ const CheckoutSection = () => {
           products: products,
           category: productCategory,
           month: productMonth,
+          tools: grantedTools,
         },
         productId: "",
         quantity: 0,
@@ -65,17 +70,33 @@ const CheckoutSection = () => {
   };
 
   useEffect(() => {
+    // Reset states if carts is empty or invalid
     if (!carts?.length) {
       setProducts([]);
       setProductMonth(0);
       setProductCategory("");
+      setGrantedTools([]);
       return;
     }
 
+    // Extract category and month from the first product of the first cart
+    const cartProduct = carts[0]?.products[0];
+    const cartCategory = cartProduct?.category || "";
+    const cartMonth = cartProduct?.month || 0;
+
+    // Update products, productCategory, and productMonth
     setProducts(carts.map((item) => item?.products[0]?.documentId));
-    setProductCategory(carts[0]?.products[0]?.category || "");
-    setProductMonth(carts[0]?.products[0]?.month || 0);
-  }, [carts]);
+    setProductCategory(cartCategory);
+    setProductMonth(cartMonth);
+
+    // Filter tools based on matching category and month
+    const filteredTools = tools.filter(
+      (tool) => tool?.category === cartCategory && tool?.month === cartMonth
+    );
+    console.log(filteredTools, "filteredTools");
+    // Update grantedTools with the filtered results
+    setGrantedTools(filteredTools?.map((tool) => tool?.documentId));
+  }, [carts, tools]);
 
   useEffect(() => {
     if (!loading) {
@@ -136,7 +157,7 @@ const CheckoutSection = () => {
       if (response.ok && data.url) {
         // Ensure cart is updated before redirecting
         await createOrderAndUpdateCart();
-        window.location.href = data.url; 
+        window.location.href = data.url;
       } else {
         alert(data.message || "Payment initiation failed");
       }

@@ -1,43 +1,41 @@
 "use client";
 
 import { useOrderStore } from "@/_store/OrderStore";
-import { useSession } from "next-auth/react";
-import React, { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { ToolsResponse } from "@/_types/product";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
-import { toast } from "sonner";
 import { encrypt } from "@/function/cryptoDecrypt";
-import { Product } from "@/_types/product";
+import { ExternalLink } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const OrderSection = () => {
   const { data: session } = useSession();
   const { orders, loading, getOrderItems } = useOrderStore();
   const DECRYPT_PASS = process.env.DECRYPT_PASS ?? "";
-  const [cookies, setCookies] = useState<string>("");
+  // const [cookies, setCookies] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  console.log(cookies, "&&");
+  // console.log(cookies, "&&");
   const handleEncryptAndCopy = useCallback(
-    async (item: Product) => {
-      console.log(JSON.stringify(item.getAccessData), "&&");
+    async (item: ToolsResponse) => {
+      console.log(JSON.stringify(item.toolData), "&&");
       setIsLoading(true);
       try {
-        const cookieToEncrypt = JSON.stringify(item.getAccessData);
+        const cookieToEncrypt = JSON.stringify(item.toolData);
         const encryptedCookies = encrypt(cookieToEncrypt, DECRYPT_PASS);
-        setCookies(encryptedCookies);
+        // setCookies(encryptedCookies);
 
         await navigator.clipboard.writeText(encryptedCookies);
-        toast.success(`Encrypted ${item.title} cookies copied!`, {
+        toast.success(`Encrypted ${item.category} cookies copied!`, {
           description: "Successfully copied to clipboard",
         });
         window.open(item.targetUrl, "_blank");
       } catch (error) {
-        toast.error(`Failed to encrypt ${item.title}`, {
+        toast.error(`Failed to encrypt ${item.category}`, {
           description: "Please try again or install our extension",
         });
         console.error("Encryption error:", error);
@@ -45,7 +43,7 @@ const OrderSection = () => {
         setIsLoading(false);
       }
     },
-    [DECRYPT_PASS, setCookies, setIsLoading]
+    [DECRYPT_PASS, setIsLoading]
   );
 
   useEffect(() => {
@@ -71,45 +69,40 @@ const OrderSection = () => {
         ) : orders && orders.length > 0 ? (
           <ScrollArea className="h-[70vh]">
             <div className="space-y-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {orders?.map((item, idx) => {
-                console.log(item);
-                return (
+              {orders?.flatMap((item) =>
+                item.tools.map((product: ToolsResponse, productIdx: number) => (
                   <Card
-                    key={idx + "orders"}
+                    key={`${item.id}-${productIdx}`}
                     className="overflow-hidden py-0 h-fit"
                   >
                     <CardContent className="p-0 dark:bg-teal-700">
-                      <div className=" items-start">
-                        {item?.products[0]?.banner?.url && (
+                      <div className="items-start">
+                        {/* {product?.banner?.url && (
                           <div className="w-full h-32 relative">
                             <Image
-                              src={item?.products[0]?.banner?.url}
-                              alt={item?.products[0]?.title || "Product image"}
+                              src={product?.banner?.url ?? "/placeholder.svg"}
+                              alt={product?.title || "Product image"}
                               fill
-                              className="object-cover "
+                              className="object-cover"
                             />
                           </div>
-                        )}
-
-                        <div className="p-4 flex-1 ">
+                        )} */}
+                        <div className="p-4 flex-1">
                           <div className="space-y-3">
                             <div>
-                              <h3 className="font-medium line-clamp-1">
-                                {item?.products[0]?.title}
-                              </h3>
+                              {/* <h3 className="font-medium line-clamp-1">
+                                {product?.title}
+                              </h3> */}
                               <div className="flex items-center gap-2 mt-1">
                                 <Badge variant="outline" className="capitalize">
-                                  {item?.products[0]?.category}
+                                  {product?.category}
                                 </Badge>
                               </div>
                             </div>
-
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() =>
-                                handleEncryptAndCopy(item?.products[0])
-                              }
+                              onClick={() => handleEncryptAndCopy(product)}
                               disabled={isLoading}
                               className="mt-2 sm:mt-0 w-full sm:w-auto"
                             >
@@ -121,8 +114,8 @@ const OrderSection = () => {
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })}
+                ))
+              )}
             </div>
           </ScrollArea>
         ) : (
