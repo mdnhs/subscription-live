@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { FallbackImage } from "@/_components/container/FallbackImage";
 
 const Header = () => {
   const router = useRouter();
@@ -82,7 +83,12 @@ const Header = () => {
       <div className="container py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-lg font-bold">
-            Logo
+            <FallbackImage
+              src="/images/logo/upeasy-logo.svg"
+              width={50}
+              height={50}
+              quality={100}
+            />
           </Link>
 
           {/* Desktop Navigation */}

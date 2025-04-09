@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Subscription",
-  description: "Explore your latest world",
+  title: "UpEasy - Next Generation of Subscriptions",
+  description: "Experience the Next GENERATION of Subscriptions with us!",
 };
 
 export default function RootLayout({
