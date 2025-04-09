@@ -2,7 +2,7 @@
 
 import { useCartStore } from "@/_store/CartStore";
 import { Product } from "@/_types/product";
-import { AlertOctagon, BadgeCheck, ShoppingCart } from "lucide-react";
+import { AlertOctagon, BadgeCheck, ShoppingCart, Watch } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -60,11 +60,16 @@ const Details = ({ product }: { product: Product }) => {
           {/* Instant Delivery */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {product?.instantDelivery ? (
-              <BadgeCheck className="h-5 w-5 text-green-500" />
+              <>
+                <BadgeCheck className="h-5 w-5 text-green-500" />
+                <span>Eligible for Instant Delivery</span>
+              </>
             ) : (
-              <AlertOctagon className="h-5 w-5 text-red-500" />
+              <>
+                <Watch className="h-5 w-5 text-red-500" />
+                <span>Delivery can take up to 2 or 3 hours</span>
+              </>
             )}
-            <span>Eligible for Instant Delivery</span>
           </div>
 
           {/* Price */}
