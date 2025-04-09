@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +20,7 @@ export function LoginForm({ className, ...props }: { className?: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const callbackUrl = useSearchParams().get("callbackUrl");
 
   const {
     register,
@@ -43,7 +44,7 @@ export function LoginForm({ className, ...props }: { className?: string }) {
           identifier: data.identifier,
           password: data.password,
           redirect: false,
-          callbackUrl: "/my-orders",
+          callbackUrl: callbackUrl || "/",
         });
 
         if (result?.error) {
@@ -66,7 +67,7 @@ export function LoginForm({ className, ...props }: { className?: string }) {
         setIsLoading(false);
       }
     },
-    [router]
+    [router, callbackUrl]
   );
 
   return (

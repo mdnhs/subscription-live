@@ -4,18 +4,20 @@ import { useCartStore } from "@/_store/CartStore";
 import { Product } from "@/_types/product";
 import { AlertOctagon, BadgeCheck, ShoppingCart } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 const Details = ({ product }: { product: Product }) => {
   const { data: clientSession, status } = useSession();
   const router = useRouter();
+  const pathName = usePathname();
+  const callbackUrl = encodeURIComponent(pathName);
   const { loading, addToCart, getCartItems } = useCartStore();
 
   const handleAddToCart = async () => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      router.push(`/login?callbackUrl=${callbackUrl}`);
     } else {
       await addToCart({
         data: {

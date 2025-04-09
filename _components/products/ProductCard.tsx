@@ -17,35 +17,40 @@ const ProductCard = ({ product }: { product: Product }) => {
   const router = useRouter();
 
   const handleAddToCart = async () => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-      return;
+    try {
+      if (status === "unauthenticated") {
+        router.push("/login");
+        return;
+      }
+
+      if (!clientSession?.user?.email) {
+        console.error("User email is not available");
+        return;
+      }
+
+      // Check if there's an existing cart and delete it
+      if (carts.length > 0) {
+        await deleteCart(carts[0].documentId);
+      }
+
+      // Add the new item to cart - await this operation
+      await addToCart({
+        data: {
+          username: clientSession?.user?.name,
+          email: clientSession?.user?.email,
+          products: [product?.documentId],
+        },
+      });
+
+      // Refresh cart items - await this as well
+      await getCartItems(clientSession.user.email);
+
+      // This will only execute after all above promises resolve
+      router.push(`/checkout`);
+    } catch (error) {
+      console.error("Error in handleAddToCart:", error);
+      // Optionally handle the error (e.g., show an error message to the user)
     }
-
-    if (!clientSession?.user?.email) {
-      console.error("User email is not available");
-      return;
-    }
-
-    // Check if there's an existing cart and delete it
-    if (carts.length > 0) {
-      await deleteCart(carts[0].documentId);
-    }
-
-    // Add the new item to cart
-    await addToCart({
-      data: {
-        username: clientSession?.user?.name,
-        email: clientSession?.user?.email,
-        products: [product?.documentId],
-      },
-    });
-
-    // Refresh cart items
-    await getCartItems(clientSession.user.email);
-    
-    // Redirect to checkout
-    router.push(`/checkout`);
   };
 
   return (
