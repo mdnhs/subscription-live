@@ -29,7 +29,7 @@ const CheckoutSection = () => {
   const [grantedTools, setGrantedTools] = useState<string[]>([]);
   const [productCategory, setProductCategory] = useState<string>("");
   const [productMonth, setProductMonth] = useState<number>(0);
-
+  console.log(carts,"&&");
   useEffect(() => {
     if (session?.user?.email) {
       getCartItems(session.user.email);

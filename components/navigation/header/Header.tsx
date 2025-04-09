@@ -1,27 +1,19 @@
 "use client";
-import { useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { Menu } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { Menu, ShoppingBag, ShoppingCart } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
 
-import { useCartStore } from "@/_store/CartStore";
+import { FallbackImage } from "@/_components/container/FallbackImage";
 import { useUserStore } from "@/_store/UserStore";
-import CartPopover from "@/_components/cart/CartPopover";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { FallbackImage } from "@/_components/container/FallbackImage";
 
 const Header = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { carts, isCartOpen, getCartItems, setCartOpen } = useCartStore();
   const { getCurrentUser, user } = useUserStore();
 
   // Memoize derived values
@@ -38,8 +30,7 @@ const Header = () => {
   // Combine effects with proper dependency handling
   useEffect(() => {
     if (jwtToken) getCurrentUser(jwtToken);
-    if (userEmail) getCartItems(userEmail);
-  }, [jwtToken, userEmail, getCurrentUser, getCartItems]);
+  }, [jwtToken, userEmail, getCurrentUser]);
 
   // Memoize session button to prevent unnecessary re-renders
   const SessionButton = useMemo(() => {
@@ -68,16 +59,6 @@ const Header = () => {
     }
   }, [status, router]);
 
-  // Memoize cart items for popover
-  const cartItems = useMemo(
-    () =>
-      carts.map((cart) => ({
-        id: cart.id,
-        products: cart.products || [],
-      })),
-    [carts]
-  );
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container py-4">
@@ -104,41 +85,6 @@ const Header = () => {
               </Link>
             )}
             {SessionButton}
-
-            <Popover open={isCartOpen} onOpenChange={setCartOpen}>
-              <PopoverTrigger className="relative flex size-9 items-center justify-center gap-2 rounded-full border bg-background shadow-xs outline-none transition-all hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 dark:border-input dark:bg-input/30 dark:hover:bg-input/50">
-                <ShoppingCart className="size-[1.2rem]" />
-                {carts.length > 0 && (
-                  <span className="absolute bottom-4 left-4 flex size-5 items-center justify-center rounded-full bg-teal-600 text-[10px] font-semibold text-white">
-                    {carts.length}
-                  </span>
-                )}
-              </PopoverTrigger>
-              <PopoverContent className="mt-5 w-[340px]">
-                <CartPopover data={cartItems} />
-                <div className="mt-4 flex justify-between gap-4">
-                  <Link href="/cart" className="basis-1/2">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setCartOpen(false)}
-                    >
-                      <ShoppingCart className="mr-2" /> View Cart (
-                      {carts.length})
-                    </Button>
-                  </Link>
-                  <Button
-                    className="basis-1/2"
-                    onClick={() => {
-                      router.push("/checkout");
-                      setCartOpen(false);
-                    }}
-                  >
-                    <ShoppingBag className="mr-2" /> Checkout
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
 
             <ModeToggle />
           </nav>

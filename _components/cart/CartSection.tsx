@@ -1,9 +1,8 @@
 "use client";
 import { useCartStore } from "@/_store/CartStore";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { BallTriangle } from "react-loader-spinner";
 import { FallbackImage } from "../container/FallbackImage";
 

@@ -24,6 +24,7 @@ const Details = ({ product }: { product: Product }) => {
           products: [product?.documentId],
         },
       });
+      router.push(`/checkout`);
       if (clientSession?.user?.email) {
         getCartItems(clientSession.user.email);
         toast.success("Added to Cart", {
@@ -76,7 +77,7 @@ const Details = ({ product }: { product: Product }) => {
             className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white transition-colors"
           >
             <ShoppingCart className="h-5 w-5 mr-2" />
-            <span>{loading ? "Adding..." : "Add to Cart"}</span>
+            <span>{loading ? "Buying..." : "Buy"}</span>
           </Button>
         </div>
       ) : (

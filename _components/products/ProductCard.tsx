@@ -12,33 +12,45 @@ import { useRouter } from "next/navigation";
 import { FallbackImage } from "../container/FallbackImage";
 
 const ProductCard = ({ product }: { product: Product }) => {
-  const { addToCart, getCartItems } = useCartStore();
+  const { carts, addToCart, getCartItems, deleteCart } = useCartStore();
   const { data: clientSession, status } = useSession();
   const router = useRouter();
 
   const handleAddToCart = async () => {
     if (status === "unauthenticated") {
       router.push("/login");
-    } else {
-      await addToCart({
-        data: {
-          username: clientSession?.user?.name,
-          email: clientSession?.user?.email,
-          products: [product?.documentId],
-        },
-      });
-      if (clientSession?.user?.email) {
-        getCartItems(clientSession.user.email);
-      } else {
-        console.error("User email is not available");
-      }
+      return;
     }
+
+    if (!clientSession?.user?.email) {
+      console.error("User email is not available");
+      return;
+    }
+
+    // Check if there's an existing cart and delete it
+    if (carts.length > 0) {
+      await deleteCart(carts[0].documentId);
+    }
+
+    // Add the new item to cart
+    await addToCart({
+      data: {
+        username: clientSession?.user?.name,
+        email: clientSession?.user?.email,
+        products: [product?.documentId],
+      },
+    });
+
+    // Refresh cart items
+    await getCartItems(clientSession.user.email);
+    
+    // Redirect to checkout
+    router.push(`/checkout`);
   };
 
   return (
     <Card className="group overflow-hidden border border-gray-50/20 bg-gray-800 text-white shadow-md hover:shadow-lg dark:bg-background/95 py-0 gap-0">
       {/* Image Section */}
-
       <Link href={`/product-details/${product?.documentId}`} className="block">
         <FallbackImage
           src={product?.banner?.url}
@@ -82,7 +94,7 @@ const ProductCard = ({ product }: { product: Product }) => {
           className="text-black dark:text-white"
         >
           <ShoppingCart className="h-4 w-4 mr-1" />
-          Add to Cart
+          Buy
         </Button>
       </CardFooter>
     </Card>

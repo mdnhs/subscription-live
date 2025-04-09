@@ -4,14 +4,16 @@ import { auth } from "./auth";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+  console.log(pathname,"middleware");
   // Protect routes that start with /dashboard
-  const protectedRoutes = ["/my-orders"];
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  
+  const protectedRoutes = ["/my-orders", "/checkout"];
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
   if (isProtectedRoute) {
     const session = await auth();
-    
+
     // Redirect to login if not authenticated
     if (!session) {
       const url = new URL("/login", request.url);
@@ -19,7 +21,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   }
-  
+
   return NextResponse.next();
 }
 
