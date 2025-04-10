@@ -1,31 +1,14 @@
 "use client";
-import { useCartStore } from "@/_store/CartStore";
+import { useDistributionStore } from "@/_store/DistributionStore";
 import { useOrderStore } from "@/_store/OrderStore";
 import { useToolStore } from "@/_store/ToolStore";
 import { Button } from "@/components/ui/button";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import Loader from "../loader/Loader";
-import CheckoutForm from "./CheckoutForm";
-import { type StripeElementsOptions } from "@stripe/stripe-js";
-import { useDistributionStore } from "@/_store/DistributionStore";
-import { usePathname } from "next/navigation";
-import path from "path";
-
-const STRIPE_OPTIONS: StripeElementsOptions = {
-  appearance: {
-    theme: "night" as const, // or "stripe" | "night" | "flat" | "none"
-    labels: "floating" as const, // or "above" | "floating"
-  },
-  mode: "payment" as const, // explicitly set as "payment" literal
-  currency: "usd",
-};
 
 const PAYMENT_METHODS = [
-  { id: "stripe", name: "Stripe", icon: "💳" },
   { id: "sslcommerz", name: "SSLCommerz", icon: "💸" },
   { id: "bkash", name: "bKash", icon: "📱" },
   { id: "nagad", name: "Nagad", icon: "💰" },
@@ -33,20 +16,28 @@ const PAYMENT_METHODS = [
 
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]["id"];
 
+// Define a type for cart items stored in local storage
+type LocalCartItem = {
+  documentId: string;
+  products: {
+    documentId: string;
+    title: string;
+    price: number;
+    category: string;
+    month: number;
+    banner?: { url: string };
+  }[];
+};
+
 const CheckoutSection = () => {
-  const stripePromise = loadStripe(
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHER_KEY!
-  );
   const { data: session } = useSession();
-  const pathname = usePathname();
-  const { carts, loading, getCartItems, deleteCart } = useCartStore();
   const { createOrder } = useOrderStore();
   const { distributions, getDistributionItems } = useDistributionStore();
   const { tools, getToolItems, updateTools } = useToolStore();
 
+  const [carts, setCarts] = useState<LocalCartItem[]>([]); // Local cart state
   const [total, setTotal] = useState(0);
-  const [selectedPayment, setSelectedPayment] =
-    useState<PaymentMethod>("stripe");
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("sslcommerz");
   const [isProcessing, setIsProcessing] = useState(false);
   const [products, setProducts] = useState<string[]>([]);
   const [grantedTool, setGrantedTool] = useState<string[]>([]);
@@ -57,40 +48,45 @@ const CheckoutSection = () => {
   const [productCategory, setProductCategory] = useState("");
   const [productMonth, setProductMonth] = useState(0);
   const [showSupportMessage, setShowSupportMessage] = useState(false);
+  const [loading, setLoading] = useState(true); // Local loading state
 
   // Memoized cart product details
   const cartProduct = useMemo(() => carts[0]?.products?.[0], [carts]);
 
-  // Calculate total and options
-  const stripeOptions = useMemo(
-    () => ({
-      ...STRIPE_OPTIONS,
-      amount: total * 100,
-    }),
-    [total]
-  );
-
-  // Fetch data on mount
+  // Load cart from local storage and fetch tools/distributions on mount
   useEffect(() => {
-    if (session?.user?.email) {
-      getCartItems(session.user.email);
-      getToolItems();
-      getDistributionItems();
-    }
-  }, [getCartItems, getToolItems, getDistributionItems, session?.user?.email]);
+    const loadInitialData = async () => {
+      // Load cart from local storage
+      const storedCart = localStorage.getItem("localCart");
+      if (storedCart) {
+        setCarts(JSON.parse(storedCart));
+      }
 
-  // Calculate total when carts change
+      // Fetch tools and distributions
+      if (session?.user?.email) {
+        await Promise.all([getToolItems(), getDistributionItems()]);
+      }
+      setLoading(false);
+    };
+
+    loadInitialData();
+  }, [session?.user?.email, getToolItems, getDistributionItems]);
+
+  // Calculate total and sync local storage when carts change
   useEffect(() => {
-    if (!loading && carts) {
+    if (!loading && carts.length) {
       const totalAmount = carts.reduce(
         (sum, item) => sum + (Number(item?.products?.[0]?.price) || 0),
         0
       );
       setTotal(totalAmount);
+      localStorage.setItem("localCart", JSON.stringify(carts)); // Sync to local storage
+    } else {
+      setTotal(0);
     }
   }, [carts, loading]);
 
-  // Handle tool selection logic
+  // Handle tool selection logic (unchanged)
   useEffect(() => {
     if (!carts?.length) {
       setProducts([]);
@@ -114,7 +110,7 @@ const CheckoutSection = () => {
     const distributionTools = distributions.filter(
       (tool) => tool?.toolName === category
     );
-    const MAX_TOOL_ORDERS = distributionTools?.[0]?.numberOfUser ?? 10; // Extract magic number to constant
+    const MAX_TOOL_ORDERS = distributionTools?.[0]?.numberOfUser ?? 10;
 
     const availableTool = filteredTools.find(
       (tool) => (tool?.totalOrder || 0) < MAX_TOOL_ORDERS
@@ -136,42 +132,39 @@ const CheckoutSection = () => {
     }
   }, [carts, tools, cartProduct, distributions]);
 
-  const createOrderAndUpdateCart = async () => {
+  // Simplified order creation without cart deletion
+  const createOrderAndUpdateTools = async () => {
     if (!session?.user?.email || !grantedToolDetails.documentId) return;
 
+    setIsProcessing(true);
     try {
-      await createOrder({
-        data: {
-          email: session.user.email,
-          username: session.user.name || "",
-          amount: total,
-          products,
-          category: productCategory,
-          month: productMonth,
-          tools: grantedTool,
-        },
-        productId: "",
-        quantity: 0,
-      });
+      await Promise.all([
+        createOrder({
+          data: {
+            email: session.user.email,
+            username: session.user.name || "",
+            amount: total,
+            products,
+            category: productCategory,
+            month: productMonth,
+            tools: grantedTool,
+          },
+          productId: "",
+          quantity: 0,
+        }),
+        updateTools(grantedToolDetails.documentId, {
+          totalOrder: (grantedToolDetails.totalOrder || 0) + 1,
+        }),
+      ]);
 
-      await updateTools(grantedToolDetails.documentId, {
-        totalOrder: (grantedToolDetails.totalOrder || 0) + 1,
-      });
-
-      // Delete all cart items in parallel
-      await Promise.all(
-        carts.map((item) =>
-          item?.documentId ? deleteCart(item?.documentId) : Promise.resolve()
-        )
-      );
-
-      // Refresh cart
-      if (session.user.email) {
-        await getCartItems(session.user.email);
-      }
+      // Clear local cart after successful order
+      setCarts([]);
+      localStorage.removeItem("localCart");
     } catch (error) {
       console.error("Checkout error:", error);
       throw error;
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -183,7 +176,6 @@ const CheckoutSection = () => {
     if (!carts?.length || !session?.user || showSupportMessage) return;
 
     setIsProcessing(true);
-
     try {
       const response = await fetch("/api/payment/request", {
         method: "POST",
@@ -201,8 +193,8 @@ const CheckoutSection = () => {
 
       const data = await response.json();
       if (response.ok && data.url) {
-        await createOrderAndUpdateCart();
-        // window.location.href = data.url;
+        await createOrderAndUpdateTools();
+        window.location.href = data.url; // Redirect after order
       } else {
         alert(data.message || "Payment failed");
       }
@@ -212,6 +204,15 @@ const CheckoutSection = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Utility to add item to local cart (example usage elsewhere in app)
+  const addToLocalCart = (item: LocalCartItem) => {
+    setCarts((prev) => {
+      const newCart = [...prev, item];
+      localStorage.setItem("localCart", JSON.stringify(newCart));
+      return newCart;
+    });
   };
 
   if (loading) return <Loader />;
@@ -250,12 +251,6 @@ const CheckoutSection = () => {
 
               {total > 0 && (
                 <div className="mt-6">
-                  {selectedPayment === "stripe" && (
-                    <Elements stripe={stripePromise} options={stripeOptions}>
-                      <CheckoutForm amount={total} />
-                    </Elements>
-                  )}
-
                   {selectedPayment === "sslcommerz" && (
                     <Button
                       onClick={handleSSLCommerzPayment}
@@ -301,9 +296,7 @@ const CheckoutSection = () => {
                           {item?.products?.[0]?.title}
                         </h3>
                         <dl className="mt-0.5 space-y-px text-[12px] text-gray-100">
-                          <dd className="capitalize">
-                            {item?.products?.[0]?.category}
-                          </dd>
+                          <dd className="capitalize">{item?.products?.[0]?.category}</dd>
                           <dd>${item?.products?.[0]?.price}</dd>
                         </dl>
                       </div>
@@ -340,12 +333,8 @@ const CheckoutSection = () => {
 
             <div className="relative mt-10 flex">
               <p className="flex flex-col">
-                <span className="text-sm font-bold text-white">
-                  Money Back Guarantee
-                </span>
-                <span className="text-xs font-medium text-white">
-                  within 30 days of purchase
-                </span>
+                <span className="text-sm font-bold text-white">Money Back Guarantee</span>
+                <span className="text-xs font-medium text-white">within 30 days of purchase</span>
               </p>
             </div>
           </div>

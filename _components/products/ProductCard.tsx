@@ -1,6 +1,5 @@
 "use client";
 
-import { useCartStore } from "@/_store/CartStore";
 import { Product } from "@/_types/product";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,46 +10,59 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FallbackImage } from "../container/FallbackImage";
 
+// Define the cart item type (consistent with CheckoutSection)
+type LocalCartItem = {
+  documentId: string;
+  products: {
+    documentId: string;
+    title: string;
+    price: number;
+    category: string;
+    month: number;
+    banner?: { url: string };
+  }[];
+};
+
 const ProductCard = ({ product }: { product: Product }) => {
-  const { carts, addToCart, getCartItems, deleteCart } = useCartStore();
   const { data: clientSession, status } = useSession();
   const router = useRouter();
 
-  const handleAddToCart = async () => {
-    try {
-      if (status === "unauthenticated") {
-        router.push("/login");
-        return;
-      }
-
-      if (!clientSession?.user?.email) {
-        console.error("User email is not available");
-        return;
-      }
-
-      // Check if there's an existing cart and delete it
-      if (carts.length > 0) {
-        await deleteCart(carts[0].documentId);
-      }
-
-      // Add the new item to cart - await this operation
-      await addToCart({
-        data: {
-          username: clientSession?.user?.name,
-          email: clientSession?.user?.email,
-          products: [product?.documentId],
-        },
-      });
-
-      // Refresh cart items - await this as well
-      await getCartItems(clientSession.user.email);
-
-      // This will only execute after all above promises resolve
-      router.push(`/checkout`);
-    } catch (error) {
-      console.error("Error in handleAddToCart:", error);
-      // Optionally handle the error (e.g., show an error message to the user)
+  const handleAddToCart = () => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
     }
+
+    if (!clientSession?.user?.email) {
+      console.error("User email is not available");
+      return;
+    }
+
+    // Prepare the cart item
+    const newCartItem: LocalCartItem = {
+      documentId: `local-${Date.now()}`, // Unique ID for local storage
+      products: [
+        {
+          documentId: product.documentId,
+          title: product.title,
+          price: product.price,
+          category: product.category,
+          month: product.month,
+          banner: product.banner ? { url: product.banner.url } : undefined,
+        },
+      ],
+    };
+
+    // Load existing cart from local storage
+    const storedCart = localStorage.getItem("localCart");
+    const currentCart: LocalCartItem[] = storedCart ? JSON.parse(storedCart) : [];
+
+    // Clear existing cart and add new item (mimicking previous behavior)
+    const updatedCart = [newCartItem]; // Replace cart with new item
+    localStorage.setItem("localCart", JSON.stringify(updatedCart));
+
+    // Redirect to checkout
+    router.push("/checkout");
   };
 
   return (
@@ -86,11 +98,8 @@ const ProductCard = ({ product }: { product: Product }) => {
       </CardContent>
 
       {/* Footer with Buttons */}
-      <CardFooter className="p-4 pt-0 flex flex-wrap gap-4 md:gap-0 justify-between items-center ">
-        <Link
-          href={`/product-details/${product?.documentId}`}
-          className="block"
-        >
+      <CardFooter className="p-4 pt-0 flex flex-wrap gap-4 md:gap-0 justify-between items-center">
+        <Link href={`/product-details/${product?.documentId}`} className="block">
           <Button variant="destructive" className="!bg-brand-1">
             View Details
           </Button>
