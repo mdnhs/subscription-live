@@ -25,7 +25,8 @@ const CheckoutSection = () => {
   const { tools, getToolItems, updateTools } = useToolStore(); // Removed updateTools as it's not used directly in useEffect
 
   const [total, setTotal] = useState(0);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("sslcommerz");
+  const [selectedPayment, setSelectedPayment] =
+    useState<PaymentMethod>("sslcommerz");
   const [isProcessing, setIsProcessing] = useState(false);
   const [products, setProducts] = useState<string[]>([]);
   const [grantedTool, setGrantedTool] = useState<string[]>([]);
@@ -48,7 +49,12 @@ const CheckoutSection = () => {
     if (session?.user?.email) {
       getToolItems(); // Assuming getToolItems has similar optimization
     }
-  }, [session?.user?.email, distributions.length, getDistributionItems, getToolItems]);
+  }, [
+    session?.user?.email,
+    distributions.length,
+    getDistributionItems,
+    getToolItems,
+  ]);
 
   // Calculate total when cartItems change
   useEffect(() => {
@@ -168,7 +174,7 @@ const CheckoutSection = () => {
       const data = await response.json();
       if (response.ok && data.url) {
         await createOrderAndUpdateCart();
-        // window.location.href = data.url;
+        window.location.href = data.url;
       } else {
         alert(data.message || "Payment failed");
       }
