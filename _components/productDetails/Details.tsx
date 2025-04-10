@@ -2,11 +2,11 @@
 
 import { useCartStore } from "@/_store/CartStore";
 import { Product } from "@/_types/product";
-import { AlertOctagon, BadgeCheck, ShoppingCart, Watch } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlarmClock, BadgeCheck, ShoppingCart } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 const Details = ({ product }: { product: Product }) => {
   const { data: clientSession, status } = useSession();
@@ -66,7 +66,7 @@ const Details = ({ product }: { product: Product }) => {
               </>
             ) : (
               <>
-                <Watch className="h-5 w-5 text-red-500" />
+                <AlarmClock className="h-5 w-5 text-brand-1" />
                 <span>Delivery can take up to 2 or 3 hours</span>
               </>
             )}

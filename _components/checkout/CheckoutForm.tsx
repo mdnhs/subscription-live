@@ -112,7 +112,7 @@ const CheckoutForm = ({ amount }: Props) => {
   };
 
   useEffect(() => {
-    const ProductsList = carts?.map((item) => item?.products[0]?.id);
+    const ProductsList = carts?.map((item) => item?.products?.[0]?.id);
     setProducts(ProductsList || []);
   }, [carts]);
 

@@ -91,7 +91,9 @@ const ProductCard = ({ product }: { product: Product }) => {
           href={`/product-details/${product?.documentId}`}
           className="block"
         >
-          <Button variant="destructive">View Details</Button>
+          <Button variant="destructive" className="!bg-brand-1">
+            View Details
+          </Button>
         </Link>
         <Button
           variant="outline"

@@ -46,45 +46,75 @@ export const useCartStore = create<CartState>()(
         const itemExists = currentCarts.some(
           (cart) => cart?.products[0]?.documentId === productsId
         );
+        
         if (itemExists) {
-          // Instead of throwing an error, we'll just set a message and return
-          set({ loading: false });
-          // This is where you'd trigger a toast in your UI component
-          toast.warning("Already Added!"); // For debugging
-          return; // Exit the function early
+          // Delete all cart items when the item already exists
+          set({ loading: true });
+          
+          try {
+            // Delete all cart items
+            await Promise.all(
+              currentCarts.map((item) =>
+                item?.id ? get().deleteCart(item.id) : Promise.resolve()
+              )
+            );
+            
+            // After clearing cart, add the new item
+            await addNewItem(data);
+            
+            // Set success message
+            toast.success("Cart updated", {
+              description: "Previous items removed and new item added to your cart",
+              duration: 3000,
+            });
+            
+            return; // Exit the function early
+          } catch (error) {
+            set({
+              loading: false,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            return;
+          }
+        } else {
+          // If item doesn't exist, just add it normally
+          await addNewItem(data);
         }
+        
+        // Helper function to add new item
+        async function addNewItem(itemData: CartData) {
+          set({ loading: true, error: null });
+          try {
+            const response = await fetch(`${apiUrl}/api/carts`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(itemData),
+            });
 
-        set({ loading: true, error: null });
-        try {
-          const response = await fetch(`${apiUrl}/api/carts`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
-
-          if (response.ok) {
+            if (!response.ok) {
+              throw new Error(`Failed to add to cart: ${response.statusText}`);
+            }
+            
+            const newCart = await response.json();
+            set((state) => ({
+              carts: [...state.carts, newCart],
+              loading: false,
+              isCartOpen: true,
+            }));
+            
             toast.success("Added to Cart", {
               description: `Tools has been added to your cart.`,
               duration: 3000,
             });
+          } catch (error) {
+            set({
+              loading: false,
+              error: error instanceof Error ? error.message : String(error),
+            });
           }
-          if (!response.ok) {
-            throw new Error(`Failed to add to cart: ${response.statusText}`);
-          }
-          const newCart = await response.json();
-          set((state) => ({
-            carts: [...state.carts, newCart],
-            loading: false,
-            isCartOpen: true,
-          }));
-        } catch (error) {
-          set({
-            loading: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
         }
       },
       getCartItems: async (email: string) => {

@@ -12,6 +12,8 @@ import Loader from "../loader/Loader";
 import CheckoutForm from "./CheckoutForm";
 import { type StripeElementsOptions } from "@stripe/stripe-js";
 import { useDistributionStore } from "@/_store/DistributionStore";
+import { usePathname } from "next/navigation";
+import path from "path";
 
 const STRIPE_OPTIONS: StripeElementsOptions = {
   appearance: {
@@ -36,6 +38,7 @@ const CheckoutSection = () => {
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHER_KEY!
   );
   const { data: session } = useSession();
+  const pathname = usePathname();
   const { carts, loading, getCartItems, deleteCart } = useCartStore();
   const { createOrder } = useOrderStore();
   const { distributions, getDistributionItems } = useDistributionStore();
@@ -56,7 +59,7 @@ const CheckoutSection = () => {
   const [showSupportMessage, setShowSupportMessage] = useState(false);
 
   // Memoized cart product details
-  const cartProduct = useMemo(() => carts[0]?.products[0], [carts]);
+  const cartProduct = useMemo(() => carts[0]?.products?.[0], [carts]);
 
   // Calculate total and options
   const stripeOptions = useMemo(
@@ -80,7 +83,7 @@ const CheckoutSection = () => {
   useEffect(() => {
     if (!loading && carts) {
       const totalAmount = carts.reduce(
-        (sum, item) => sum + (Number(item?.products[0]?.price) || 0),
+        (sum, item) => sum + (Number(item?.products?.[0]?.price) || 0),
         0
       );
       setTotal(totalAmount);
@@ -100,7 +103,7 @@ const CheckoutSection = () => {
     const category = cartProduct?.category || "";
     const month = cartProduct?.month || 0;
 
-    setProducts(carts.map((item) => item?.products[0]?.documentId));
+    setProducts(carts.map((item) => item?.products?.[0]?.documentId));
     setProductCategory(category);
     setProductMonth(month);
 
@@ -158,7 +161,7 @@ const CheckoutSection = () => {
       // Delete all cart items in parallel
       await Promise.all(
         carts.map((item) =>
-          item?.documentId ? deleteCart(item.documentId) : Promise.resolve()
+          item?.documentId ? deleteCart(item?.documentId) : Promise.resolve()
         )
       );
 
@@ -281,12 +284,12 @@ const CheckoutSection = () => {
               <h2 className="sr-only">Order summary</h2>
 
               <ul className="space-y-5">
-                {carts?.map((item) => (
-                  <li key={item.id} className="flex justify-between">
+                {carts?.map((item, idx) => (
+                  <li key={idx} className="flex justify-between">
                     <div className="inline-flex">
-                      {item?.products[0]?.banner?.url && (
+                      {item?.products?.[0]?.banner?.url && (
                         <Image
-                          src={item.products[0].banner.url}
+                          src={item?.products?.[0]?.banner?.url}
                           alt=""
                           height={100}
                           width={100}
@@ -295,18 +298,18 @@ const CheckoutSection = () => {
                       )}
                       <div className="ml-3 flex flex-col items-start">
                         <h3 className="text-sm font-medium text-white line-clamp-1">
-                          {item?.products[0]?.title}
+                          {item?.products?.[0]?.title}
                         </h3>
                         <dl className="mt-0.5 space-y-px text-[12px] text-gray-100">
                           <dd className="capitalize">
-                            {item?.products[0]?.category}
+                            {item?.products?.[0]?.category}
                           </dd>
-                          <dd>${item?.products[0]?.price}</dd>
+                          <dd>${item?.products?.[0]?.price}</dd>
                         </dl>
                       </div>
                     </div>
                     <p className="text-sm font-semibold text-white">
-                      ${item?.products[0]?.price}
+                      ${item?.products?.[0]?.price}
                     </p>
                   </li>
                 ))}

@@ -28,7 +28,7 @@ export function RegisterForm({ className, ...props }: { className?: string }) {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
+      fullName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -42,7 +42,7 @@ export function RegisterForm({ className, ...props }: { className?: string }) {
 
       try {
         const response = await axios.post(`${apiUrl}/api/auth/local/register`, {
-          username: data.username,
+          username: data.fullName,
           email: data.email,
           password: data.password,
         });
@@ -85,18 +85,18 @@ export function RegisterForm({ className, ...props }: { className?: string }) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="fullName">Full Name</Label>
                 <Input
-                  id="username"
+                  id="fullName"
                   type="text"
-                  placeholder="Enter your username"
-                  {...register("username")}
+                  placeholder="Enter your full name"
+                  {...register("fullName")}
                   disabled={isLoading || isSubmitting}
-                  className={errors.username ? "border-red-500" : ""}
+                  className={errors.fullName ? "border-red-500" : ""}
                 />
-                {errors.username && (
+                {errors.fullName && (
                   <p className="text-sm text-red-500">
-                    {errors.username.message}
+                    {errors.fullName.message}
                   </p>
                 )}
               </div>
