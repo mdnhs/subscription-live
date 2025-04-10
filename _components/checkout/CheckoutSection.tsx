@@ -1,31 +1,15 @@
 "use client";
-import { useCartStore } from "@/_store/CartStore";
+import { useDistributionStore } from "@/_store/DistributionStore";
 import { useOrderStore } from "@/_store/OrderStore";
 import { useToolStore } from "@/_store/ToolStore";
 import { Button } from "@/components/ui/button";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import Loader from "../loader/Loader";
-import CheckoutForm from "./CheckoutForm";
-import { type StripeElementsOptions } from "@stripe/stripe-js";
-import { useDistributionStore } from "@/_store/DistributionStore";
-import { usePathname } from "next/navigation";
-import path from "path";
-
-const STRIPE_OPTIONS: StripeElementsOptions = {
-  appearance: {
-    theme: "night" as const, // or "stripe" | "night" | "flat" | "none"
-    labels: "floating" as const, // or "above" | "floating"
-  },
-  mode: "payment" as const, // explicitly set as "payment" literal
-  currency: "usd",
-};
+import useCartStore from "@/_store/CartStore";
 
 const PAYMENT_METHODS = [
-  { id: "stripe", name: "Stripe", icon: "💳" },
   { id: "sslcommerz", name: "SSLCommerz", icon: "💸" },
   { id: "bkash", name: "bKash", icon: "📱" },
   { id: "nagad", name: "Nagad", icon: "💰" },
@@ -34,19 +18,14 @@ const PAYMENT_METHODS = [
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]["id"];
 
 const CheckoutSection = () => {
-  const stripePromise = loadStripe(
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHER_KEY!
-  );
   const { data: session } = useSession();
-  const pathname = usePathname();
-  const { carts, loading, getCartItems, deleteCart } = useCartStore();
+  const { cartItems, loading, clearCart } = useCartStore();
   const { createOrder } = useOrderStore();
   const { distributions, getDistributionItems } = useDistributionStore();
-  const { tools, getToolItems, updateTools } = useToolStore();
+  const { tools, getToolItems, updateTools } = useToolStore(); // Removed updateTools as it's not used directly in useEffect
 
   const [total, setTotal] = useState(0);
-  const [selectedPayment, setSelectedPayment] =
-    useState<PaymentMethod>("stripe");
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("sslcommerz");
   const [isProcessing, setIsProcessing] = useState(false);
   const [products, setProducts] = useState<string[]>([]);
   const [grantedTool, setGrantedTool] = useState<string[]>([]);
@@ -59,51 +38,45 @@ const CheckoutSection = () => {
   const [showSupportMessage, setShowSupportMessage] = useState(false);
 
   // Memoized cart product details
-  const cartProduct = useMemo(() => carts[0]?.products?.[0], [carts]);
+  const cartProduct = useMemo(() => cartItems[0], [cartItems]);
 
-  // Calculate total and options
-  const stripeOptions = useMemo(
-    () => ({
-      ...STRIPE_OPTIONS,
-      amount: total * 100,
-    }),
-    [total]
-  );
-
-  // Fetch data on mount
+  // Fetch data on mount only if session exists and data isn't already loaded
   useEffect(() => {
-    if (session?.user?.email) {
-      getCartItems(session.user.email);
-      getToolItems();
+    if (session?.user?.email && distributions.length === 0) {
       getDistributionItems();
     }
-  }, [getCartItems, getToolItems, getDistributionItems, session?.user?.email]);
+    if (session?.user?.email) {
+      getToolItems(); // Assuming getToolItems has similar optimization
+    }
+  }, [session?.user?.email, distributions.length, getDistributionItems, getToolItems]);
 
-  // Calculate total when carts change
+  // Calculate total when cartItems change
   useEffect(() => {
-    if (!loading && carts) {
-      const totalAmount = carts.reduce(
-        (sum, item) => sum + (Number(item?.products?.[0]?.price) || 0),
+    if (!loading && cartItems) {
+      const totalAmount = cartItems.reduce(
+        (sum, item) => sum + (Number(item?.price) || 0),
         0
       );
       setTotal(totalAmount);
     }
-  }, [carts, loading]);
+  }, [cartItems, loading]);
 
-  // Handle tool selection logic
+  // Handle tool selection logic (unchanged)
   useEffect(() => {
-    if (!carts?.length) {
+    if (!cartItems?.length) {
       setProducts([]);
       setProductMonth(0);
       setProductCategory("");
       setGrantedTool([]);
+      setGrantedToolDetails({});
+      setShowSupportMessage(false);
       return;
     }
 
     const category = cartProduct?.category || "";
     const month = cartProduct?.month || 0;
 
-    setProducts(carts.map((item) => item?.products?.[0]?.documentId));
+    setProducts(cartItems.map((item) => item?.documentId));
     setProductCategory(category);
     setProductMonth(month);
 
@@ -114,7 +87,7 @@ const CheckoutSection = () => {
     const distributionTools = distributions.filter(
       (tool) => tool?.toolName === category
     );
-    const MAX_TOOL_ORDERS = distributionTools?.[0]?.numberOfUser ?? 10; // Extract magic number to constant
+    const MAX_TOOL_ORDERS = distributionTools?.[0]?.numberOfUser ?? 10;
 
     const availableTool = filteredTools.find(
       (tool) => (tool?.totalOrder || 0) < MAX_TOOL_ORDERS
@@ -124,17 +97,19 @@ const CheckoutSection = () => {
       setGrantedTool([availableTool.documentId]);
       setGrantedToolDetails({
         documentId: availableTool.documentId,
-        totalOrder: availableTool.totalOrder,
+        totalOrder: availableTool.totalOrder || 0,
       });
       setShowSupportMessage(false);
-    } else if (filteredTools.length) {
+    } else if (filteredTools.length > 1) {
       setGrantedTool([]);
+      setGrantedToolDetails({});
       setShowSupportMessage(true);
     } else {
       setGrantedTool([]);
-      setShowSupportMessage(false);
+      setGrantedToolDetails({});
+      setShowSupportMessage(true);
     }
-  }, [carts, tools, cartProduct, distributions]);
+  }, [cartItems, tools, cartProduct, distributions]);
 
   const createOrderAndUpdateCart = async () => {
     if (!session?.user?.email || !grantedToolDetails.documentId) return;
@@ -154,21 +129,12 @@ const CheckoutSection = () => {
         quantity: 0,
       });
 
+      // Assuming updateTools is imported and used elsewhere
       await updateTools(grantedToolDetails.documentId, {
         totalOrder: (grantedToolDetails.totalOrder || 0) + 1,
       });
 
-      // Delete all cart items in parallel
-      await Promise.all(
-        carts.map((item) =>
-          item?.documentId ? deleteCart(item?.documentId) : Promise.resolve()
-        )
-      );
-
-      // Refresh cart
-      if (session.user.email) {
-        await getCartItems(session.user.email);
-      }
+      clearCart();
     } catch (error) {
       console.error("Checkout error:", error);
       throw error;
@@ -180,7 +146,7 @@ const CheckoutSection = () => {
   };
 
   const handleSSLCommerzPayment = async () => {
-    if (!carts?.length || !session?.user || showSupportMessage) return;
+    if (!cartItems?.length || !session?.user || showSupportMessage) return;
 
     setIsProcessing(true);
 
@@ -250,12 +216,6 @@ const CheckoutSection = () => {
 
               {total > 0 && (
                 <div className="mt-6">
-                  {selectedPayment === "stripe" && (
-                    <Elements stripe={stripePromise} options={stripeOptions}>
-                      <CheckoutForm amount={total} />
-                    </Elements>
-                  )}
-
                   {selectedPayment === "sslcommerz" && (
                     <Button
                       onClick={handleSSLCommerzPayment}
@@ -284,12 +244,12 @@ const CheckoutSection = () => {
               <h2 className="sr-only">Order summary</h2>
 
               <ul className="space-y-5">
-                {carts?.map((item, idx) => (
+                {cartItems?.map((item, idx) => (
                   <li key={idx} className="flex justify-between">
                     <div className="inline-flex">
-                      {item?.products?.[0]?.banner?.url && (
+                      {item?.banner?.url && (
                         <Image
-                          src={item?.products?.[0]?.banner?.url}
+                          src={item?.banner?.url}
                           alt=""
                           height={100}
                           width={100}
@@ -298,18 +258,16 @@ const CheckoutSection = () => {
                       )}
                       <div className="ml-3 flex flex-col items-start">
                         <h3 className="text-sm font-medium text-white line-clamp-1">
-                          {item?.products?.[0]?.title}
+                          {item?.title}
                         </h3>
                         <dl className="mt-0.5 space-y-px text-[12px] text-gray-100">
-                          <dd className="capitalize">
-                            {item?.products?.[0]?.category}
-                          </dd>
-                          <dd>${item?.products?.[0]?.price}</dd>
+                          <dd className="capitalize">{item?.category}</dd>
+                          <dd>${item?.price}</dd>
                         </dl>
                       </div>
                     </div>
                     <p className="text-sm font-semibold text-white">
-                      ${item?.products?.[0]?.price}
+                      ${item?.price}
                     </p>
                   </li>
                 ))}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useCartStore } from "@/_store/CartStore";
 import { Product } from "@/_types/product";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,10 +9,11 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FallbackImage } from "../container/FallbackImage";
+import useCartStore from "@/_store/CartStore";
 
 const ProductCard = ({ product }: { product: Product }) => {
-  const { carts, addToCart, getCartItems, deleteCart } = useCartStore();
-  const { data: clientSession, status } = useSession();
+  const { cartItems, addToCart, clearCart } = useCartStore();
+  const { status } = useSession();
   const router = useRouter();
 
   const handleAddToCart = async () => {
@@ -23,33 +23,26 @@ const ProductCard = ({ product }: { product: Product }) => {
         return;
       }
 
-      if (!clientSession?.user?.email) {
-        console.error("User email is not available");
-        return;
+      // Clear existing cart items if any
+      if (cartItems.length > 0) {
+        clearCart();
       }
 
-      // Check if there's an existing cart and delete it
-      if (carts.length > 0) {
-        await deleteCart(carts[0].documentId);
-      }
-
-      // Add the new item to cart - await this operation
-      await addToCart({
-        data: {
-          username: clientSession?.user?.name,
-          email: clientSession?.user?.email,
-          products: [product?.documentId],
-        },
+      // Add the new product to cart
+      addToCart({
+        documentId: product.documentId,
+        title: product.title,
+        price: product.price,
+        category: product.category,
+        month: product.month,
+        banner: product.banner,
       });
 
-      // Refresh cart items - await this as well
-      await getCartItems(clientSession.user.email);
-
-      // This will only execute after all above promises resolve
+      // Redirect to checkout
       router.push(`/checkout`);
     } catch (error) {
       console.error("Error in handleAddToCart:", error);
-      // Optionally handle the error (e.g., show an error message to the user)
+      // Optionally show error to user
     }
   };
 

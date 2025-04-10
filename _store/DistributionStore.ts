@@ -1,4 +1,3 @@
-// _store/ToolStore.ts
 import { create } from "zustand";
 
 interface DistributionResponse {
@@ -20,11 +19,18 @@ interface OrderState {
   getDistributionItems: () => Promise<void>;
 }
 
-export const useDistributionStore = create<OrderState>((set) => ({
+export const useDistributionStore = create<OrderState>((set, get) => ({
   distributions: [],
   loading: false,
   error: null,
   getDistributionItems: async () => {
+    const { distributions, loading } = get();
+
+    // Prevent fetching if data is already loaded or if a fetch is in progress
+    if (distributions.length > 0 || loading) {
+      return;
+    }
+
     set({ loading: true, error: null });
     try {
       const response = await fetch(`${apiUrl}/api/distributions`, {
@@ -33,7 +39,7 @@ export const useDistributionStore = create<OrderState>((set) => ({
         },
       });
       if (!response.ok) {
-        throw new Error(`Failed to fetch orders: ${response.statusText}`);
+        throw new Error(`Failed to fetch distributions: ${response.statusText}`);
       }
       const data = await response.json();
       set({ distributions: data.data, loading: false });

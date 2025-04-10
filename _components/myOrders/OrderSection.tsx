@@ -69,7 +69,53 @@ const OrderSection = () => {
         ) : orders && orders.length > 0 ? (
           <ScrollArea className="h-[70vh]">
             <div className="space-y-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            
+              {orders?.flatMap((item) =>
+                item.tools.map((product: ToolsResponse, productIdx: number) => (
+                  <Card
+                    key={`${item.id}-${productIdx}`}
+                    className="overflow-hidden py-0 h-fit"
+                  >
+                    <CardContent className="p-0 dark:bg-teal-700">
+                      <div className="items-start">
+                        {/* {product?.banner?.url && (
+                          <div className="w-full h-32 relative">
+                            <Image
+                              src={product?.banner?.url ?? "/placeholder.svg"}
+                              alt={product?.title || "Product image"}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        )} */}
+                        <div className="p-4 flex-1">
+                          <div className="space-y-3">
+                            <div>
+                              {/* <h3 className="font-medium line-clamp-1">
+                                {product?.title}
+                              </h3> */}
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="capitalize">
+                                  {product?.category}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEncryptAndCopy(product)}
+                              disabled={isLoading}
+                              className="mt-2 sm:mt-0 w-full sm:w-auto"
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Get Access
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </ScrollArea>
         ) : (

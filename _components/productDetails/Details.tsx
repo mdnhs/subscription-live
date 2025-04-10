@@ -1,6 +1,6 @@
 "use client";
 
-import { useCartStore } from "@/_store/CartStore";
+import useCartStore from "@/_store/CartStore";
 import { Product } from "@/_types/product";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,34 +8,48 @@ import { AlarmClock, BadgeCheck, ShoppingCart } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
+
 const Details = ({ product }: { product: Product }) => {
-  const { data: clientSession, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const pathName = usePathname();
   const callbackUrl = encodeURIComponent(pathName);
-  const { loading, addToCart, getCartItems } = useCartStore();
+  const { loading, addToCart, clearCart } = useCartStore();
 
   const handleAddToCart = async () => {
     if (status === "unauthenticated") {
       router.push(`/login?callbackUrl=${callbackUrl}`);
-    } else {
-      await addToCart({
-        data: {
-          username: clientSession?.user?.name,
-          email: clientSession?.user?.email,
-          products: [product?.documentId],
-        },
+      return;
+    }
+
+    try {
+      // Clear existing cart items if any
+      clearCart();
+
+      // Add the new product to cart
+      addToCart({
+        documentId: product.documentId,
+        title: product.title,
+        price: product.price,
+        category: product.category,
+        month: product.month,
+        banner: product.banner,
       });
+
+      // Show success notification
+      toast.success("Added to Cart", {
+        description: `${product.title} has been added to your cart.`,
+        duration: 3000,
+      });
+
+      // Redirect to checkout
       router.push(`/checkout`);
-      if (clientSession?.user?.email) {
-        getCartItems(clientSession.user.email);
-        toast.success("Added to Cart", {
-          description: `${product.title} has been added to your cart.`,
-          duration: 3000,
-        });
-      } else {
-        console.error("User email is not available");
-      }
+    } catch (error) {
+      toast.error("Failed to add to cart", {
+        description: "Please try again later.",
+        duration: 3000,
+      });
+      console.error("Error adding to cart:", error);
     }
   };
 
@@ -84,7 +98,7 @@ const Details = ({ product }: { product: Product }) => {
             className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white transition-colors"
           >
             <ShoppingCart className="h-5 w-5 mr-2" />
-            <span>{loading ? "Buying..." : "Buy"}</span>
+            <span>{loading ? "Processing..." : "Buy"}</span>
           </Button>
         </div>
       ) : (
