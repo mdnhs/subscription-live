@@ -1,21 +1,16 @@
 "use client";
-import { useProductStore } from "@/_store/ProductStore";
+import { Product } from "@/_types/product";
 import { usePathname } from "next/navigation";
 import BreadCrumb from "../BreadCrumb/BreadCrumb";
 import Banner from "./Banner";
 import Details from "./Details";
 
 interface ProductDetailsParams {
-  productId: string;
+  product: Product;
 }
 
-const ProductDetails = (params: ProductDetailsParams) => {
+const ProductDetails = ({ product }: ProductDetailsParams) => {
   const path: string = usePathname();
-  const { cachedProductById } = useProductStore();
-  
-  // Get product from cache
-  const product = cachedProductById[params?.productId];
-
   return (
     <div className="bg-background/95 text-white min-h-screen p-5 rounded-2xl space-y-5">
       <BreadCrumb PathName="Product" Path={path} />

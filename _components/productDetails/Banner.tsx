@@ -1,12 +1,12 @@
 import Image from "next/image";
 
-interface Product {
+interface product {
   banner?: {
     url?: string;
   };
 }
 
-const Banner = ({ product }: { product: Product }) => {
+const Banner = ({ product }: { product: product }) => {
   return (
     <div>
       {product?.banner?.url ? (
