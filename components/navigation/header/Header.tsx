@@ -32,7 +32,6 @@ const Header = () => {
           </Sheet>
         </nav>
       </div>
-        {/* <ProgressBar /> */}
     </header>
   );
 };

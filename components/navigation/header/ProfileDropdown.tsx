@@ -29,11 +29,10 @@ const ProfileDropdown = () => {
   const { data: session, status } = useSession();
   const { user } = useUserStore();
 
-
   const adminUrl = useMemo(
     () => process.env.NEXT_PUBLIC_REST_API_URL || "#",
     []
-  );  
+  );
 
   // Memoize session button to prevent unnecessary re-renders
   const SessionButton = useMemo(() => {
@@ -106,16 +105,30 @@ const ProfileDropdown = () => {
           </Link>
         );
     }
-  }, [status, router, adminUrl, user?.isAdmin, user?.profilePicture, session?.user?.name]);
+  }, [
+    status,
+    router,
+    adminUrl,
+    user?.isAdmin,
+    user?.profilePicture,
+    session?.user?.name,
+  ]);
   return (
     <>
+      {status === "loading" ? (
+        <div className="w-40 h-9  dark:bg-gray-500 bg-gray-200 animate-pulse rounded-full" />
+      ) : status === "authenticated" && user?.username ? (
+        `Welcome, ${user.username} 👋`
+      ) : (
+        "Welcome, Guest 👋"
+      )}
+
+      {SessionButton}
       {status === "loading" ? (
         <Button className="rounded-full h-9 w-9 animate-pulse dark:bg-gray-500 bg-gray-200"></Button>
       ) : (
         <ModeToggle />
       )}
-
-      {SessionButton}
     </>
   );
 };
