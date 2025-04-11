@@ -5,6 +5,7 @@ export type fetchTypePublic = {
   cache?: RequestCache;
   payload?: any;
   server?: string;
+  apiKey?: string;
   revalidate?: number;
 };
 
@@ -12,6 +13,7 @@ const apiKey = process.env.NEXT_PUBLIC_REST_API_KEY;
 const apiUrl = process.env.NEXT_PUBLIC_REST_API_URL;
 
 const fetchPublic = async (props: fetchTypePublic) => {
+  
   try {
     const res = await fetch(`${props.server ?? apiUrl}${props.path}`, {
       next: { revalidate: props.revalidate ?? 0 },
@@ -19,7 +21,7 @@ const fetchPublic = async (props: fetchTypePublic) => {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${props.apiKey ?? apiKey}`,
       },
       ...(props.payload && { body: JSON.stringify(props.payload) }),
     });

@@ -35,3 +35,11 @@ export default async function Page({
     </div>
   );
 }
+
+export async function generateStaticParams() {
+  const blogs = [{ slug: "example-blog" }, { slug: "another-blog" }];
+
+  return blogs.map((blog) => ({
+    slug: blog.slug,
+  }));
+}

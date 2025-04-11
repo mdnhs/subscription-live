@@ -17,7 +17,7 @@ const getProductById: any = (id: string) => {
 const getProductsByCategory: any = (category: string) => {
   return {
     method: "GET",
-    path: `/api//products?filters[category][$eq]=${category}&populate=*`,
+    path: `/api/products?filters[category][$eq]=${category}&populate=*`,
   };
 };
 

@@ -2,8 +2,30 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import { NextAuthConfig } from "next-auth";
+import { getToken } from "next-auth/jwt";
+import { cookies } from "next/headers"; // For app router support
 
 const apiUrl = process.env.NEXT_PUBLIC_REST_API_URL;
+const secret = process.env.AUTH_SECRET;
+
+if (!secret) {
+  throw new Error("Missing NEXTAUTH_SECRET environment variable.");
+}
+
+export async function getServerToken() {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    ?.getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join("; ");
+
+  const token = await getToken({
+    req: { headers: { cookie: cookieHeader } },
+    secret,
+  });
+
+  return token?.user?.jwt ?? null;
+}
 
 export const authConfig: NextAuthConfig = {
   providers: [
@@ -13,7 +35,6 @@ export const authConfig: NextAuthConfig = {
         identifier: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      // auth.ts
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) {
           console.log("Missing credentials");
@@ -31,7 +52,7 @@ export const authConfig: NextAuthConfig = {
               headers: {
                 "Content-Type": "application/json",
               },
-              timeout: 5000, // 5 second timeout
+              timeout: 5000,
             }
           );
 
@@ -62,23 +83,25 @@ export const authConfig: NextAuthConfig = {
     }),
   ],
   callbacks: {
-    // Include JWT token in the session
     async session({ session, token }) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       session.user = token.user as any;
       return session;
     },
-    // Add user info and JWT to the token
     async jwt({ token, user }) {
       if (user) {
-        token.user = user;
+        token.user = user as {
+          id: string;
+          name: string;
+          email: string;
+          jwt: string;
+        };
       }
       return token;
     },
   },
   pages: {
     signIn: "/login",
-    error: "/login", // Error code passed in query string as ?error=
+    error: "/login",
   },
   session: {
     strategy: "jwt",
