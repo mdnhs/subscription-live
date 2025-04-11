@@ -63,19 +63,16 @@ export const useOrderStore = create<OrderState>((set) => ({
     set({ loading: true, error: null });
     try {
       const query = new URLSearchParams();
-      query.append('populate[products][populate][0]', 'banner');
-      query.append('populate[tools]', '*');
-      query.append('filters[email][$eq]', email);
-      
-      const response = await fetch(
-        `${apiUrl}/api/orders?${query.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
-        }
-      );
-      
+      query.append("populate[products][populate][0]", "banner");
+      query.append("populate[tools]", "*");
+      query.append("filters[email][$eq]", email);
+
+      const response = await fetch(`${apiUrl}/api/orders?${query.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+
       if (!response.ok) {
         throw new Error(`Failed to fetch orders: ${response.statusText}`);
       }

@@ -26,7 +26,7 @@ async function nextAuthMiddleware(request: NextRequest): Promise<NextResponse> {
       secureCookie: process.env.NODE_ENV === "production",
     });
 
-    console.log("Session token:", session); // Debug
+    // console.log("Session token:", session); // Debug
 
     const isRSCRequest = request.headers
       .get("accept")

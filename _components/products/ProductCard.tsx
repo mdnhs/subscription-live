@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FallbackImage } from "../container/FallbackImage";
 import useCartStore from "@/_store/CartStore";
+import { getExpireDays } from "@/function/dateFormatter";
 
 const ProductCard = ({ product }: { product: Product }) => {
   const { cartItems, addToCart, clearCart } = useCartStore();
@@ -70,7 +71,7 @@ const ProductCard = ({ product }: { product: Product }) => {
             className="flex items-center gap-1 bg-gray-700 text-gray-200 dark:bg-gray-800 dark:text-gray-300"
           >
             <CalendarClock />
-            <span className="text-xs">{product?.month} Month</span>
+            <span className="text-xs">{product?.month} Month ({getExpireDays(product?.month)})</span>
           </Badge>
           <span className="text-sm font-medium text-teal-400">
             ৳{product?.price?.toLocaleString()}
