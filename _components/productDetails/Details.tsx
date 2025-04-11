@@ -1,58 +1,9 @@
-"use client";
-
-import useCartStore from "@/_store/CartStore";
 import { Product } from "@/_types/product";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlarmClock, BadgeCheck, ShoppingCart } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { usePathname, useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { AlarmClock, BadgeCheck } from "lucide-react";
+import BuyButton from "./BuyButton";
 
 const Details = ({ product }: { product: Product }) => {
-  const { status } = useSession();
-  const router = useRouter();
-  const pathName = usePathname();
-  const callbackUrl = encodeURIComponent(pathName);
-  const { loading, addToCart, clearCart } = useCartStore();
-
-  const handleAddToCart = async () => {
-    if (status === "unauthenticated") {
-      router.push(`/login?callbackUrl=${callbackUrl}`);
-      return;
-    }
-
-    try {
-      // Clear existing cart items if any
-      clearCart();
-
-      // Add the new product to cart
-      addToCart({
-        documentId: product.documentId,
-        title: product.title,
-        price: product.price,
-        category: product.category,
-        month: product.month,
-        banner: product.banner,
-      });
-
-      // Show success notification
-      toast.success("Added to Cart", {
-        description: `${product.title} has been added to your cart.`,
-        duration: 3000,
-      });
-
-      // Redirect to checkout
-      router.push(`/checkout`);
-    } catch (error) {
-      toast.error("Failed to add to cart", {
-        description: "Please try again later.",
-        duration: 3000,
-      });
-      console.error("Error adding to cart:", error);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {product?.documentId ? (
@@ -92,14 +43,7 @@ const Details = ({ product }: { product: Product }) => {
           </p>
 
           {/* Add to Cart Button */}
-          <Button
-            onClick={handleAddToCart}
-            disabled={loading}
-            className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white transition-colors"
-          >
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            <span>{loading ? "Processing..." : "Buy"}</span>
-          </Button>
+          <BuyButton product={product} />
         </div>
       ) : (
         <div className="space-y-4">

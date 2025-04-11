@@ -1,12 +1,15 @@
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import React from "react";
 
 interface BreadCrumbProps {
   PathName: string;
-  Path: string;
 }
 
-const BreadCrumb: React.FC<BreadCrumbProps> = ({ PathName, Path }) => {
+const BreadCrumb: React.FC<BreadCrumbProps> = ({ PathName }) => {
+  const path: string = usePathname();
+
   return (
     <nav aria-label="Breadcrumb" className="flex">
       <ol className="flex overflow-hidden rounded-lg border border-gray-200 text-gray-800">
@@ -38,7 +41,7 @@ const BreadCrumb: React.FC<BreadCrumbProps> = ({ PathName, Path }) => {
           <span className="absolute inset-y-0 -start-px h-10 w-4  [clip-path:_polygon(0_0,_0%_100%,_100%_50%)] rtl:rotate-180 bg-gray-200"></span>
 
           <Link
-            href={Path}
+            href={path}
             className="flex h-10 items-center  pe-4 ps-8 text-xs font-medium transition  bg-white hover:text-teal-700"
           >
             {PathName}

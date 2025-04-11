@@ -50,7 +50,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   return (
     <Card className="group overflow-hidden border border-gray-50/20 bg-gray-800 text-white shadow-md hover:shadow-lg dark:bg-background/95 py-0 gap-0">
       {/* Image Section */}
-      <Link href={`/product-details/${product?.documentId}`} className="block">
+      <Link href={`/explore/${product?.documentId}`} className="block">
         <FallbackImage
           src={product?.banner?.url}
           alt={`${product?.title} banner`}
@@ -71,7 +71,9 @@ const ProductCard = ({ product }: { product: Product }) => {
             className="flex items-center gap-1 bg-gray-700 text-gray-200 dark:bg-gray-800 dark:text-gray-300"
           >
             <CalendarClock />
-            <span className="text-xs">{product?.month} Month ({getExpireDays(product?.month)})</span>
+            <span className="text-xs">
+              {product?.month} Month ({getExpireDays(product?.month)})
+            </span>
           </Badge>
           <span className="text-sm font-medium text-teal-400">
             ৳{product?.price?.toLocaleString()}
@@ -81,10 +83,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 
       {/* Footer with Buttons */}
       <CardFooter className="p-4 pt-0 flex flex-wrap gap-4 md:gap-0 justify-between items-center ">
-        <Link
-          href={`/product-details/${product?.documentId}`}
-          className="block"
-        >
+        <Link href={`/explore/${product?.documentId}`} className="block">
           <Button variant="destructive" className="!bg-brand-1">
             View Details
           </Button>
