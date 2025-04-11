@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import HeaderLogo from "./HeaderLogo";
 import ProfileDropdown from "./ProfileDropdown";
+import ProgressBar from "@/_components/ProgressBar/ProgressBar";
 
 const Header = () => {
   return (
@@ -32,6 +33,7 @@ const Header = () => {
           </Sheet>
         </nav>
       </div>
+        <ProgressBar />
     </header>
   );
 };
