@@ -13,7 +13,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     <SessionProvider>
       <ProgressProvider
         height="2px"
-        color="#e9711b"
+        color="linear-gradient(to right, #e9711b00, #e9711b)"
         options={{ showSpinner: false }}
         shallowRouting
       >
