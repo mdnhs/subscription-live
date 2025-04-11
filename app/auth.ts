@@ -84,7 +84,16 @@ export const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     async session({ session, token }) {
-      session.user = token.user as any;
+      session.user = {
+        ...token.user,
+        emailVerified: null, // Add default emailVerified property
+      } as {
+        id: string;
+        name: string;
+        email: string;
+        jwt: string;
+        emailVerified: null;
+      };
       return session;
     },
     async jwt({ token, user }) {
