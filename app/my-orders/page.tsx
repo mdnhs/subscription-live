@@ -1,16 +1,13 @@
-import OrderSection from "@/_components/myOrders/OrderSection";
+// app/orders/page.jsx
 import { getOrders } from "@/services/api/orderRequest";
-import { fetchPublic } from "@/services/fetch/ssrfetchPublic";
+import { fetchPublic } from "@/services/fetch/ssrFetch";
 import { auth } from "../auth";
+import OrdersClient from "@/_components/myOrders/OrdersClient";
 
 export default async function Page() {
-  // Fetch session using getServerSession
   const session = await auth();
-
-  // Initialize orders
   let orders = [];
 
-  // Fetch orders only if session exists
   if (session?.user?.email) {
     try {
       const req = getOrders(session.user.email);
@@ -23,12 +20,14 @@ export default async function Page() {
     console.log("No session found, user may need to log in.");
   }
 
-  // Log orders for debugging
-  // console.log("Orders:", orders);
-
   return (
     <div className="container py-5">
-      <OrderSection orders={orders} />
+      {/* Pass orders and email, use key to force remount on navigation */}
+      <OrdersClient
+        initialOrders={orders}
+        email={session?.user?.email}
+        key={Date.now()}
+      />
     </div>
   );
 }

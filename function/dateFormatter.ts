@@ -4,11 +4,20 @@ import { format } from "date-fns";
  * Returns expiration date as a formatted string (e.g., "May 10, 2025")
  * by adding (months * 30 days) to the given order date.
  */
-export function getFormattedExpireDate(orderDate: string | Date, months: number): string {
+export function getFormattedExpireDate(expireDate: string | Date): string {
+  const date = new Date(expireDate);
+  return format(date, "MMM dd, yyyy");
+}
+
+export function setFormattedExpireDate(
+  orderDate: string | Date,
+  months: number
+): string | Date {
   const date = new Date(orderDate);
   const daysToAdd = months * 30;
   date.setDate(date.getDate() + daysToAdd);
-  return format(date, "MMM dd, yyyy");
+
+  return typeof orderDate === "string" ? date.toISOString() : date;
 }
 
 /**

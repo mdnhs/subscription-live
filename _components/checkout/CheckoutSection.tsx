@@ -1,32 +1,38 @@
 "use client";
+import useCartStore from "@/_store/CartStore";
 import { useDistributionStore } from "@/_store/DistributionStore";
-import { useOrderStore } from "@/_store/OrderStore";
 import { useToolStore } from "@/_store/ToolStore";
+import { ToolsResponse } from "@/_types/product";
 import { Button } from "@/components/ui/button";
+import { createOrder } from "@/services/api/orderRequest";
+import useFetch from "@/services/fetch/csrFecth";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import Loader from "../loader/Loader";
-import useCartStore from "@/_store/CartStore";
+import useOrderStore from "@/services/store/useOrderStore";
 
 const PAYMENT_METHODS = [
-  { id: "sslcommerz", name: "SSLCommerz", icon: "💸" },
   { id: "bkash", name: "bKash", icon: "📱" },
   { id: "nagad", name: "Nagad", icon: "💰" },
 ] as const;
 
 type PaymentMethod = (typeof PAYMENT_METHODS)[number]["id"];
 
-const CheckoutSection = () => {
+const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
   const { data: session } = useSession();
   const { cartItems, loading, clearCart } = useCartStore();
-  const { createOrder } = useOrderStore();
+  const { setOrder } = useOrderStore();
+  const { fetchPublic } = useFetch();
   const { distributions, getDistributionItems } = useDistributionStore();
-  const { tools, getToolItems, updateTools } = useToolStore(); // Removed updateTools as it's not used directly in useEffect
+  const { updateTools } = useToolStore();
+  const searchParams = useSearchParams();
 
   const [total, setTotal] = useState(0);
   const [selectedPayment, setSelectedPayment] =
-    useState<PaymentMethod>("sslcommerz");
+    useState<PaymentMethod>("bkash");
   const [isProcessing, setIsProcessing] = useState(false);
   const [products, setProducts] = useState<string[]>([]);
   const [grantedTool, setGrantedTool] = useState<string[]>([]);
@@ -38,25 +44,25 @@ const CheckoutSection = () => {
   const [productMonth, setProductMonth] = useState(0);
   const [showSupportMessage, setShowSupportMessage] = useState(false);
 
+  // Check for payment cancellation or failure
+  useEffect(() => {
+    const message = searchParams.get("message");
+    if (message === "cancel" || message === "failure") {
+      toast.error("Payment failed. Please try again.");
+    }
+  }, [searchParams]);
+
   // Memoized cart product details
   const cartProduct = useMemo(() => cartItems[0], [cartItems]);
 
-  // Fetch data on mount only if session exists and data isn't already loaded
+  // Fetch data on mount
   useEffect(() => {
     if (session?.user?.email && distributions.length === 0) {
       getDistributionItems();
     }
-    if (session?.user?.email) {
-      getToolItems(); // Assuming getToolItems has similar optimization
-    }
-  }, [
-    session?.user?.email,
-    distributions.length,
-    getDistributionItems,
-    getToolItems,
-  ]);
+  }, [session?.user?.email, distributions.length, getDistributionItems]);
 
-  // Calculate total when cartItems change
+  // Calculate total
   useEffect(() => {
     if (!loading && cartItems) {
       const totalAmount = cartItems.reduce(
@@ -67,7 +73,7 @@ const CheckoutSection = () => {
     }
   }, [cartItems, loading]);
 
-  // Handle tool selection logic (unchanged)
+  // Handle tool selection logic
   useEffect(() => {
     if (!cartItems?.length) {
       setProducts([]);
@@ -86,9 +92,11 @@ const CheckoutSection = () => {
     setProductCategory(category);
     setProductMonth(month);
 
-    const filteredTools = tools.filter(
-      (tool) => tool?.category === category && tool?.month === month
-    );
+    const filteredTools = Array.isArray(tools)
+      ? tools.filter(
+          (tool) => tool?.category === category && tool?.month === month
+        )
+      : [];
 
     const distributionTools = distributions.filter(
       (tool) => tool?.toolName === category
@@ -100,7 +108,9 @@ const CheckoutSection = () => {
     );
 
     if (availableTool) {
-      setGrantedTool([availableTool.documentId]);
+      if (availableTool.documentId) {
+        setGrantedTool([availableTool.documentId]);
+      }
       setGrantedToolDetails({
         documentId: availableTool.documentId,
         totalOrder: availableTool.totalOrder || 0,
@@ -118,32 +128,40 @@ const CheckoutSection = () => {
   }, [cartItems, tools, cartProduct, distributions]);
 
   const createOrderAndUpdateCart = async () => {
-    if (!session?.user?.email || !grantedToolDetails.documentId) return;
+    if (!session?.user?.email) {
+      toast.error("Please sign in to create an order.");
+      return null;
+    }
+
+    const payload = {
+      data: {
+        email: session.user.email,
+        username: session.user.name || "",
+        amount: total,
+        products,
+        category: productCategory,
+        month: productMonth,
+        tools: grantedTool,
+      },
+      productId: "", // Replace with actual productId if required
+      quantity: 0, // Replace with actual quantity if required
+    };
 
     try {
-      await createOrder({
-        data: {
-          email: session.user.email,
-          username: session.user.name || "",
-          amount: total,
-          products,
-          category: productCategory,
-          month: productMonth,
-          tools: grantedTool,
-        },
-        productId: "",
-        quantity: 0,
-      });
+      const req = createOrder({ data: payload.data });
+      const response = await fetchPublic(req); // Ensure fetchPublic is awaited
+      const { data } = response;
 
-      // Assuming updateTools is imported and used elsewhere
-      await updateTools(grantedToolDetails.documentId, {
-        totalOrder: (grantedToolDetails.totalOrder || 0) + 1,
-      });
-
-      clearCart();
+      if (data) {
+        setOrder(data);
+        return data.data; // Return the order data if needed
+      } else {
+        throw new Error("No data returned from order creation.");
+      }
     } catch (error) {
       console.error("Checkout error:", error);
-      throw error;
+      toast.error("Failed to create order.");
+      return null;
     }
   };
 
@@ -151,36 +169,64 @@ const CheckoutSection = () => {
     setSelectedPayment(method);
   };
 
-  const handleSSLCommerzPayment = async () => {
-    if (!cartItems?.length || !session?.user || showSupportMessage) return;
+  const handleBkashPayment = async () => {
+    if (!cartItems?.length || !session?.user || showSupportMessage) {
+      toast.error("Cannot proceed with payment.");
+      return;
+    }
+
+    if (!grantedToolDetails.documentId) {
+      toast.error("No available tool selected.");
+      return;
+    }
 
     setIsProcessing(true);
 
     try {
-      const response = await fetch("/api/payment/request", {
+      // Create order and get order documentId
+      await createOrderAndUpdateCart();
+
+      // Proceed with payment using orderDocumentId
+      const response = await fetch("/api/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          product_name: cartProduct?.title || "Product Purchase",
-          product_category: cartProduct?.category || "General",
           amount: total.toString(),
-          customer_name: session.user.name || "Customer",
+          name: session.user.name,
           email: session.user.email,
-          phone: "01711111111",
-          address: "Bangladesh",
         }),
       });
 
-      const data = await response.json();
-      if (response.ok && data.url) {
-        await createOrderAndUpdateCart();
-        window.location.href = data.url;
+      if (!response.ok) {
+        if (response.status === 409) {
+          toast.error("Please refresh the page and try again.");
+        } else {
+          const errorMessage = await response.json();
+          toast.error(
+            errorMessage.statusMessage ||
+              "Please refresh the page and try again."
+          );
+        }
+        setIsProcessing(false);
+        return;
+      }
+
+      const sessionData = await response.json();
+      if (sessionData.bkashURL) {
+        // Update tools after order creation
+        await updateTools(grantedToolDetails.documentId, {
+          totalOrder: (grantedToolDetails.totalOrder || 0) + 1,
+        });
+        clearCart();
+        window.location.href = sessionData.bkashURL;
       } else {
-        alert(data.message || "Payment failed");
+        toast.error("Failed to initiate bKash payment.");
       }
     } catch (error) {
-      console.error("Payment error:", error);
-      alert("Payment failed. Please try again.");
+      console.error("bKash payment error:", error);
+      toast.error("Payment failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -222,19 +268,19 @@ const CheckoutSection = () => {
 
               {total > 0 && (
                 <div className="mt-6">
-                  {selectedPayment === "sslcommerz" && (
+                  {selectedPayment === "bkash" && (
                     <Button
-                      onClick={handleSSLCommerzPayment}
+                      onClick={handleBkashPayment}
                       disabled={isProcessing}
                       className="w-full p-2 mt-4 text-white rounded-md hover:bg-teal-800 bg-teal-600"
                     >
-                      {isProcessing ? "Processing..." : "Pay with SSLCommerz"}
+                      {isProcessing ? "Processing..." : "Pay with bKash"}
                     </Button>
                   )}
 
-                  {["bkash", "nagad"].includes(selectedPayment) && (
+                  {selectedPayment === "nagad" && (
                     <div className="p-4 bg-gray-100 rounded text-black">
-                      <p>{selectedPayment} integration coming soon</p>
+                      <p>Nagad integration coming soon</p>
                     </div>
                   )}
                 </div>

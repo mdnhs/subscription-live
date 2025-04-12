@@ -9,10 +9,11 @@ import OrderAccessButton from "./OrderAccessButton";
 
 const OrderCard: React.FC<ToolsResponse> = ({
   category,
-  createdAt,
   month,
   toolData,
   targetUrl,
+  expireDate,
+  isActive,
 }) => {
   return (
     <Card className="overflow-hidden py-0 h-fit">
@@ -29,14 +30,18 @@ const OrderCard: React.FC<ToolsResponse> = ({
               </div>
               <Badge variant="outline" className="capitalize">
                 Expire Date: <br />
-                {getFormattedExpireDate(createdAt, month)} (
-                {getExpireDays(month)})
+                {getFormattedExpireDate(
+                  expireDate ?? new Date().toISOString()
+                )}{" "}
+                ({getExpireDays(month)})
               </Badge>
-              <OrderAccessButton
-                category={category}
-                targetUrl={targetUrl}
-                toolData={toolData}
-              />
+              {isActive && (
+                <OrderAccessButton
+                  category={category}
+                  targetUrl={targetUrl}
+                  toolData={toolData}
+                />
+              )}
             </div>
           </div>
         </div>

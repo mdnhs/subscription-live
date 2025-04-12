@@ -1,6 +1,6 @@
 import ProductDetails from "@/_components/productDetails/ProductDetails";
 import { getProductById } from "@/services/api/productRequest";
-import { fetchPublic } from "@/services/fetch/ssrfetchPublic";
+import { fetchPublic } from "@/services/fetch/ssrFetch";
 
 export default async function Page({
   params,

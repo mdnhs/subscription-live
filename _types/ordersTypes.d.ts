@@ -7,6 +7,7 @@ export type OrderResponse = {
       documentId: string;
       email: string;
       username: string;
+      expireDate?: string;
       amount: number;
       createdAt: string; // ISO date string
       updatedAt: string; // ISO date string

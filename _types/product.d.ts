@@ -65,4 +65,9 @@ export interface ToolsResponse {
   month: number;
   toolData: string[];
   createdAt: string;
+  documentId?: string;
+  totalOrder?: number;
+  createOrderDate?: string;
+  expireDate?: string;
+  isActive?: boolean;
 }

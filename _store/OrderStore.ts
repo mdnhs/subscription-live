@@ -23,6 +23,8 @@ const apiUrl = process.env.NEXT_PUBLIC_REST_API_URL;
 
 interface OrderState {
   orders: OrderResponse[];
+  orderId: string | null;
+  setOrderId: (orderId: string) => void; // Add method to set orderId
   loading: boolean;
   error: string | null;
   createOrder: (data: OrderData) => Promise<void>;
@@ -31,6 +33,7 @@ interface OrderState {
 
 export const useOrderStore = create<OrderState>((set) => ({
   orders: [],
+  orderId: null,
   loading: false,
   error: null,
   createOrder: async (data: OrderData) => {
@@ -44,19 +47,45 @@ export const useOrderStore = create<OrderState>((set) => ({
         },
         body: JSON.stringify(data),
       });
+
       if (!response.ok) {
         throw new Error(`Failed to create order: ${response.statusText}`);
       }
+
       const newOrder = await response.json();
-      set((state) => ({
-        orders: [...state.orders, newOrder], // Add new order to the list
-        loading: true,
-      }));
+      console.log("API Response:", newOrder); // Debug: Log full response
+
+      // Adjust this based on actual API response structure
+      const documentId = newOrder?.data?.documentId;
+      console.log("Extracted documentId:", documentId); // Debug: Confirm documentId
+
+      if (!documentId) {
+        throw new Error("Document ID not found in response");
+      }
+
+      set((state) => {
+        console.log("Setting state with orderId:", documentId); // Debug: Before state update
+        return {
+          orders: [...state.orders, newOrder],
+          orderId: documentId, // Directly set orderId
+          loading: false,
+        };
+      });
+
+      // Verify state after update
+      console.log(
+        "Updated orderId in store:",
+        useOrderStore.getState().orderId
+      );
+
+      return documentId;
     } catch (error) {
+      console.error("Error in createOrder:", error);
       set({
         loading: false,
         error: error instanceof Error ? error.message : String(error),
       });
+      throw error;
     }
   },
   getOrderItems: async (email: string) => {
@@ -84,5 +113,8 @@ export const useOrderStore = create<OrderState>((set) => ({
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  },
+  setOrderId: (orderId: string) => {
+    set({ orderId });
   },
 }));
