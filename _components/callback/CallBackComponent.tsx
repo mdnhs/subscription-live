@@ -14,10 +14,10 @@ const CallBackComponent = () => {
   const id_token = searchParams.get("id_token");
   useEffect(() => {
     if (status === "cancel") {
-      window.location.href = `${process.env.NEXT_PUBLIC_bkash_base_url_for_frontend}/payment-cancelled?message=${status}`;
+      window.location.href = `${process.env.NEXTAUTH_URL}/payment-cancelled?message=${status}`;
     }
     if (status === "failure") {
-      window.location.href = `${process.env.NEXT_PUBLIC_bkash_base_url_for_frontend}/payment-failed?message=${status}`;
+      window.location.href = `${process.env.NEXTAUTH_URL}/payment-failed?message=${status}`;
     }
     const successFunc = async () => {
       const response = await fetch(`/api/callback`, {
@@ -27,20 +27,20 @@ const CallBackComponent = () => {
       if (!response.ok) {
         toast.error("Something went wrong please try");
         // return (window.location.href = `${
-        //   process.env.NEXT_PUBLIC_bkash_base_url_for_frontend
+        //   process.env.NEXTAUTH_URL
         // }?success=${false}`);
       }
       const { success } = await response.json();
       if (success) {
         toast.success("Subscription complete");
         window.location.href = `${
-          process.env.NEXT_PUBLIC_bkash_base_url_for_frontend
+          process.env.NEXTAUTH_URL
         }/payment-confirm?success=${true}&paymentID=${paymentID}`;
         return;
       } else {
         toast.error("Something went wrong please try 2");
         window.location.href = `${
-          process.env.NEXT_PUBLIC_bkash_base_url_for_frontend
+          process.env.NEXTAUTH_URL
         }/payment-confirm?success=${false}&paymentID=${paymentID}`;
         return;
       }
@@ -50,9 +50,9 @@ const CallBackComponent = () => {
         successFunc();
       } catch (error) {
         console.log(error);
-        window.location.href = `${
-          process.env.NEXT_PUBLIC_bkash_base_url_for_frontend
-        }/?message=${(error as any).message}&paymentID=${paymentID}`;
+        window.location.href = `${process.env.NEXTAUTH_URL}/?message=${
+          (error as any).message
+        }&paymentID=${paymentID}`;
       }
     }
   }, [id_token, paymentID, status]);

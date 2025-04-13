@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         mode: "0011",
         payerReference: " ",
-        callbackURL: `${process.env.bkash_base_url_for_api}/callback?id_token=${id_token}`,
+        callbackURL: `${process.env.NEXTAUTH_URL}/callback?id_token=${id_token}`,
         amount: amount,
         currency: "BDT",
         intent: "sale",
