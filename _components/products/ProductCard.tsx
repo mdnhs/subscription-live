@@ -62,7 +62,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 
       {/* Content Section */}
       <CardContent className="p-4">
-        <h2 className="truncate text-sm font-semibold tracking-tight">
+        <h2 className="truncate text-sm font-semibold tracking-tight text-start">
           {product?.title}
         </h2>
         <div className="mt-2 flex items-center justify-between">
