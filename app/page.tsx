@@ -15,7 +15,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen space-y-5 ">
+    <main className="min-h-screen ">
       <LandingHero />
 
       {/* Products Section with enhanced styling */}
@@ -23,16 +23,6 @@ export default async function Home() {
         id="products"
         className="container text-center mx-auto px-4 py-16"
       >
-        <div className="flex flex-col md:flex-row items-center  justify-center mb-12">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-2">
-              Our Products
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 ">
-              Explore our latest additions and bestsellers
-            </p>
-          </div>
-        </div>
         <ProductSection products={products} />
       </section>
 

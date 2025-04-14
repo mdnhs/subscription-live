@@ -8,15 +8,15 @@ const ProductSection = ({ products }: { products: Product[] }) => {
   return (
     <div className="p-10 bg-background/95 rounded-2xl">
       <div className="pb-10 flex flex-wrap justify-between items-center">
-        <h2 className="font-bold text-2xl">Brand New</h2>
+        <h2 className="font-bold text-2xl">Trending this week</h2>
         <Link href={"/explore"}>
-        <span
-          className="font-normal text-[14px]
+          <span
+            className="font-normal text-[14px]
           float-right text-primary flex 
           items-center cursor-pointer hover:text-teal-600"
-        >
-          View All Collection <ArrowRight className="h-4" />
-        </span>
+          >
+            View All <ArrowRight className="h-4" />
+          </span>
         </Link>
       </div>
       <ProductsList products={products} />
