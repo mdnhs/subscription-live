@@ -4,10 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getExpireDays } from "@/function/dateFormatter";
 import { CalendarClock } from "lucide-react";
 import Link from "next/link";
-import { FallbackImage } from "../../container/FallbackImage";
-import BuyButtonContainer from "../../productDetails/BuyButtonContainer";
+import { FallbackImage } from "../container/FallbackImage";
+import BuyButtonContainer from "../productDetails/BuyButtonContainer";
 
-const ProductCard = ({ product }: { product: Product }) => {
+const WeekProductCard = ({ product }: { product: Product }) => {
   return (
     <Card className="group border rounded-2xl border-gray-50/20 bg-transparent backdrop-blur-xs text-white shadow-md hover:shadow-lg py-0 gap-0 p-3 w-full relative">
       <FallbackImage
@@ -36,7 +36,7 @@ const ProductCard = ({ product }: { product: Product }) => {
               {product?.title}
             </h2>
             <p className=" font-semibold bg-gradient-to-t from-brand-1 via-brand-1 to-white bg-clip-text text-transparent text-start text-2xl">
-              ৳{product?.price?.toLocaleString()}
+              {product?.price?.toLocaleString()}৳
             </p>
           </div>
           <Badge
@@ -57,4 +57,4 @@ const ProductCard = ({ product }: { product: Product }) => {
   );
 };
 
-export default ProductCard;
+export default WeekProductCard;

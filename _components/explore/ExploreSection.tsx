@@ -22,7 +22,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import ProductCard from "../products/weekend/ProductCard";
+import CommonProductCard from "../products/CommonProductCard";
 
 type SortOption =
   | "newest"
@@ -341,7 +341,7 @@ const ExploreSection = ({ products }: { products: Product[] }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <CommonProductCard key={product.id} product={product} />
             ))
           ) : (
             <div className="col-span-full text-center p-8 bg-muted rounded-lg">

@@ -1,6 +1,6 @@
 // app/page.tsx
 import { FallbackImage } from "@/_components/container/FallbackImage";
-import ProductSection from "@/_components/products/weekend/ProductSection";
+import ProductSection from "@/_components/products/ProductSection";
 import LandingHero from "@/components/landing/LandingHero";
 import { getProducts } from "@/services/api/productRequest";
 import { fetchPublic } from "@/services/fetch/ssrFetch";
@@ -24,8 +24,25 @@ export default async function Home() {
       <LandingHero />
 
       {/* Products Section with enhanced styling */}
+      <section
+        id="weekend-products"
+        className="container text-center mx-auto px-4"
+      >
+        <ProductSection
+          headline="Trending on this week"
+          url="/market"
+          products={products}
+          type="week"
+        />
+      </section>
+
       <section id="products" className="container text-center mx-auto px-4">
-        <ProductSection products={products} />
+        <ProductSection
+          headline="Buy your favorite one"
+          url="/market"
+          products={products}
+          type="common"
+        />
       </section>
 
       {/* Testimonials Section */}

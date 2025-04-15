@@ -1,6 +1,5 @@
 // components/ProductsList.tsx
 import React from "react";
-import ProductCard from "./ProductCard";
 import { Product } from "@/_types/product";
 import {
   Carousel,
@@ -9,10 +8,15 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import WeekProductCard from "./WeekProductCard";
+import CommonProductCard from "./CommonProductCard";
 
-type Props = { products: Product[] };
+type Props = { products: Product[]; type: string };
 
-const ProductsList = ({ products }: Props) => {
+const ProductsList = ({ products, type }: Props) => {
+  const classItem = `basis-full pl-0 sm:basis-1/2 ${
+    type === "week" ? "lg:basis-1/3" : "lg:basis-1/4"
+  } `;
   return (
     <div className="w-full container">
       <Carousel className="w-full">
@@ -20,10 +24,14 @@ const ProductsList = ({ products }: Props) => {
           {products?.map((product, idx) => (
             <CarouselItem
               key={product.id}
-              className={`basis-full pl-0 sm:basis-1/2 lg:basis-1/3`}
+              className={classItem}
               style={{ zIndex: products.length - idx }}
             >
-              <ProductCard product={product} />
+              {type === "week" ? (
+                <WeekProductCard product={product} />
+              ) : (
+                <CommonProductCard product={product} />
+              )}
             </CarouselItem>
           ))}
         </CarouselContent>

@@ -14,6 +14,11 @@ export default function TrapezoidBlur({ className = "" }) {
         className="h-[calc(100%+15%)] w-full z-50 absolute bottom-0 border-0"
         imgClassName="object-contain"
       />
+      <FallbackImage
+        src={"/images/1.svg"}
+        className="h-[calc(100%+15%)] w-full z-40 absolute bottom-0 border-0 blur-3xl"
+        imgClassName="object-contain"
+      />
       {/* Container matching SVG dimensions */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Blurred div with trapezoid clip-path */}

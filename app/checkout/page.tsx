@@ -15,7 +15,7 @@ export default async function page() {
     console.error("Error fetching data:", error);
   }
   return (
-    <div className="container py-5">
+    <div className="container pt-28 pb-8">
       <Suspense fallback={<>Loading...</>}>
         <CheckoutSection tools={tools} />
       </Suspense>

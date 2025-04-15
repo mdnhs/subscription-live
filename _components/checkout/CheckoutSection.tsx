@@ -253,10 +253,10 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
                     <button
                       key={id}
                       onClick={() => handlePaymentMethodChange(id)}
-                      className={`p-4 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                      className={`p-4 border rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                         selectedPayment === id
-                          ? "border-teal-600 bg-teal-600/10"
-                          : "border-gray-200 hover:border-teal-600"
+                          ? "border-brand-1 bg-brand-1/10"
+                          : "border-gray-200 hover:border-brand-1"
                       }`}
                     >
                       <span className="text-2xl">{icon}</span>
@@ -272,7 +272,7 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
                     <Button
                       onClick={handleBkashPayment}
                       disabled={isProcessing}
-                      className="w-full p-2 mt-4 text-white rounded-md hover:bg-teal-800 bg-teal-600"
+                      className="[background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF] rounded-full text-lg font-semibold text-white h-12 px-6"
                     >
                       {isProcessing ? "Processing..." : "Pay with bKash"}
                     </Button>
@@ -289,10 +289,9 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
           </div>
 
           {/* Order Summary Section */}
-          <div className="relative col-span-full flex flex-col py-6 pl-8 pr-4 sm:py-12 lg:col-span-4 lg:py-24">
-            <div className="absolute inset-0 h-full w-full bg-gradient-to-t from-teal-900 to-teal-600 opacity-95 rounded-r-2xl" />
+          <div className="relative col-span-full flex flex-col py-6 pl-8 pr-4 sm:py-12 lg:col-span-4 lg:py-24 border border-gray-200/15 rounded-2xl">
 
-            <div className="relative">
+            <div className="relative ">
               <h2 className="sr-only">Order summary</h2>
 
               <ul className="space-y-5">
@@ -306,6 +305,15 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
                           height={100}
                           width={100}
                           className="h-16 w-[6rem] rounded object-cover"
+                        />
+                      )}
+                      {item?.banner?.url && (
+                        <Image
+                          src={item?.banner?.url}
+                          alt=""
+                          height={100}
+                          width={100}
+                          className="h-16 w-[6rem] absolute -left-2 -top-2 rounded object-cover blur-xl"
                         />
                       )}
                       <div className="ml-3 flex flex-col items-start">
