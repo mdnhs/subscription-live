@@ -10,16 +10,31 @@ import {
 } from "@/components/ui/carousel";
 import WeekProductCard from "./WeekProductCard";
 import CommonProductCard from "./CommonProductCard";
+import Autoplay from "embla-carousel-autoplay";
 
 type Props = { products: Product[]; type: string };
 
 const ProductsList = ({ products, type }: Props) => {
-  const classItem = `basis-full pl-0 sm:basis-1/2 ${
+  const classItem = `basis-full pl-0 sm:basis-1/2 last:mr-3 ${
     type === "week" ? "lg:basis-1/3" : "lg:basis-1/4"
   } `;
   return (
-    <div className="w-full container">
-      <Carousel className="w-full">
+    <div className="w-full container overflow-x-clip">
+      <Carousel
+        plugins={[
+          Autoplay({
+            delay: 5000,
+            stopOnInteraction: false,
+            stopOnMouseEnter: false,
+          }),
+        ]}
+        opts={{
+          align: "start",
+          loop: true,
+          dragFree: false,
+        }}
+        className="w-full select-none"
+      >
         <CarouselContent className=" gap-3">
           {products?.map((product, idx) => (
             <CarouselItem
@@ -35,8 +50,8 @@ const ProductsList = ({ products, type }: Props) => {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="-left-8" />
-        <CarouselNext className="-right-10" />
+        <CarouselPrevious className="-left-2" />
+        <CarouselNext className="-right-1" />
       </Carousel>
     </div>
   );

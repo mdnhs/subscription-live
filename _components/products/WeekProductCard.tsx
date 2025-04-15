@@ -9,15 +9,17 @@ import BuyButtonContainer from "../productDetails/BuyButtonContainer";
 
 const WeekProductCard = ({ product }: { product: Product }) => {
   return (
-    <Card className="group border rounded-2xl border-gray-50/20 bg-transparent backdrop-blur-xs text-white shadow-md hover:shadow-lg py-0 gap-0 p-3 w-full relative">
-      <FallbackImage
-        src={product?.banner?.url}
-        alt={`${product?.title} banner`}
-        imgClassName="object-cover transition-transform duration-300 group-hover:scale-110 blur-xl"
-        className=" w-20 h-full top-0 rounded-2xl overflow-hidden absolute left-0 blur-2xl"
-      />
+    <Card className="group border rounded-2xl border-gray-50/20 bg-transparent backdrop-blur-xs text-white shadow-md hover:shadow-lg py-0 gap-0  w-full relative">
+      <div className="absolute w-full h-full rounded-2xl overflow-hidden">
+        <FallbackImage
+          src={product?.banner?.url}
+          alt={`${product?.title} banner`}
+          imgClassName="object-cover transition-transform duration-300 group-hover:scale-110 blur-xl"
+          className=" w-20 h-full top-0 rounded-2xl overflow-hidden blur-2xl"
+        />
+      </div>
       {/* Content Section */}
-      <CardContent className=" flex items-start gap-3 px-0 relative">
+      <CardContent className=" flex items-start gap-3 p-3 relative">
         {/* Image Section */}
         <Link
           href={`/market/${product?.documentId}`}
@@ -49,7 +51,7 @@ const WeekProductCard = ({ product }: { product: Product }) => {
             </span>
           </Badge>
         </div>
-        <div className=" absolute -bottom-10 flex justify-end w-full">
+        <div className=" absolute -bottom-6 right-5 flex justify-end w-full">
           <BuyButtonContainer product={product} />
         </div>
       </CardContent>
