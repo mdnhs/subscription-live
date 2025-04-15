@@ -1,7 +1,7 @@
 import { Product } from "@/_types/product";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlarmClock, BadgeCheck } from "lucide-react";
-import BuyButton from "./BuyButton";
+import BuyButtonContainer from "./BuyButtonContainer";
 
 const Details = ({ product }: { product: Product }) => {
   return (
@@ -43,7 +43,7 @@ const Details = ({ product }: { product: Product }) => {
           </p>
 
           {/* Add to Cart Button */}
-          <BuyButton product={product} />
+          <BuyButtonContainer product={product} />
         </div>
       ) : (
         <div className="space-y-4">

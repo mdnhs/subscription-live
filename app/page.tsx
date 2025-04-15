@@ -1,5 +1,6 @@
 // app/page.tsx
-import ProductSection from "@/_components/products/ProductSection";
+import { FallbackImage } from "@/_components/container/FallbackImage";
+import ProductSection from "@/_components/products/weekend/ProductSection";
 import LandingHero from "@/components/landing/LandingHero";
 import { getProducts } from "@/services/api/productRequest";
 import { fetchPublic } from "@/services/fetch/ssrFetch";
@@ -15,14 +16,15 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen ">
+    <main className="min-h-screen relative overflow-x-hidden">
+      <FallbackImage
+        src={"/images/hero-left-bg.svg"}
+        className=" h-[1500px] w-[1500px] absolute -top-80 left-0 pointer-events-none opacity-90 -z-10"
+      />
       <LandingHero />
 
       {/* Products Section with enhanced styling */}
-      <section
-        id="products"
-        className="container text-center mx-auto px-4 py-16"
-      >
+      <section id="products" className="container text-center mx-auto px-4">
         <ProductSection products={products} />
       </section>
 

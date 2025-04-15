@@ -1,28 +1,28 @@
 "use client";
 import { Product } from "@/_types/product";
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import ProductCard from "../products/ProductCard";
+import ProductCard from "../products/weekend/ProductCard";
 
 type SortOption =
   | "newest"
@@ -76,8 +76,7 @@ const ExploreSection = ({ products }: { products: Product[] }) => {
                 desc.children &&
                 desc.children.some(
                   (child) =>
-                    child.text &&
-                    child.text.toLowerCase().includes(query)
+                    child.text && child.text.toLowerCase().includes(query)
                 )
             ))
       );
@@ -339,7 +338,7 @@ const ExploreSection = ({ products }: { products: Product[] }) => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
@@ -442,7 +441,9 @@ const FilterContent = ({
             variant={selectedMonth === month ? "default" : "outline"}
             size="sm"
             onClick={() =>
-              setSelectedMonth((prev: number | null) => (prev === month ? null : month))
+              setSelectedMonth((prev: number | null) =>
+                prev === month ? null : month
+              )
             }
           >
             {month} Month{month > 1 ? "s" : ""}

@@ -1,16 +1,14 @@
 "use client";
-import React from "react";
-import { toast } from "sonner";
 import useCartStore from "@/_store/CartStore";
+import { Product } from "@/_types/product";
+import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { ShoppingCart } from "lucide-react";
-import { Product } from "@/_types/product";
+import { toast } from "sonner";
 
 type Props = { product: Product };
 
-const BuyButton = ({ product }: Props) => {
+const BuyButtonContainer = ({ product }: Props) => {
   const { status } = useSession();
   const router = useRouter();
   const pathName = usePathname();
@@ -56,12 +54,11 @@ const BuyButton = ({ product }: Props) => {
     <Button
       onClick={handleAddToCart}
       disabled={loading}
-      className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white transition-colors"
+      className="[background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF] rounded-full text-lg font-semibold text-white h-12 px-6"
     >
-      <ShoppingCart className="h-5 w-5 mr-2" />
-      <span>{loading ? "Processing..." : "Buy"}</span>
+      <span>{loading ? "Processing..." : "Buy Now"}</span>
     </Button>
   );
 };
 
-export default BuyButton;
+export default BuyButtonContainer;
