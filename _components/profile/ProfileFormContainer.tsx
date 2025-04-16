@@ -29,7 +29,7 @@ interface ProfileSectionProps {
   user: User;
   isUpdating: boolean;
   userData: User;
-  profilePic: File | null
+  profilePic: File | null;
   setIsUpdating: (value: boolean) => void;
   setUserData: (user: User) => void;
   setIsEditing: (value: boolean) => void;
@@ -54,15 +54,14 @@ const ProfileFormContainer = ({
   );
 
   const [accordionValue, setAccordionValue] = useState<string[]>(["profile"]);
-
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       username: user.username || "",
       email: user.email || "",
       bio: user.bio || "",
-      birthDate: user.birthDate
-        ? new Date(user.birthDate).toISOString().split("T")[0]
+      birthDate: userData.birthDate
+        ? new Date(userData.birthDate).toLocaleDateString().split("T")[0]
         : "",
       phoneNumber: user.phoneNumber || "",
       gender: user.gender,
@@ -117,7 +116,7 @@ const ProfileFormContainer = ({
         email: updatedUser.email || "",
         bio: updatedUser.bio || "",
         birthDate: updatedUser.birthDate
-          ? new Date(updatedUser.birthDate).toISOString().split("T")[0]
+          ? new Date(updatedUser.birthDate).toLocaleDateString().split("T")[0]
           : "",
         phoneNumber: updatedUser.phoneNumber || "",
         gender: updatedUser.gender,
@@ -196,13 +195,6 @@ const ProfileFormContainer = ({
             <p className="text-xs text-muted-foreground">
               User ID: {userData?.id}
             </p>
-            <Button
-              variant="ghost"
-              onClick={() => setIsEditing(false)}
-              disabled={isUpdating}
-            >
-              Cancel
-            </Button>
           </div>
         }
       />

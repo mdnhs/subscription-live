@@ -1,6 +1,9 @@
+import { format } from "date-fns";
+
 export const formatDate = (dateString?: string) => {
     if (!dateString) return "Not specified";
-    return new Date(dateString).toLocaleDateString();
+  const date = new Date(dateString).toLocaleDateString();
+   return format(date, "MMM dd, yyyy");
   };
   
   export const formatValue = (value?: string) => {

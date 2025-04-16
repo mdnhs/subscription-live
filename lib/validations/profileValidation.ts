@@ -5,10 +5,7 @@ export const profileSchema = z.object({
   email: z.string().email("Invalid email address"),
   bio: z.string().max(500, "Bio must be less than 500 characters").optional(),
   birthDate: z.string().optional(),
-  phoneNumber: z
-    .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number")
-    .optional(),
+  phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number"),
   gender: z.enum(["male", "female", "other"]).optional(),
   religion: z
     .enum(["islam", "hinduism", "christianity", "buddhism", "other"])
