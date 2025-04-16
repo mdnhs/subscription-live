@@ -1,9 +1,38 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
-import { NextAuthConfig } from "next-auth";
+import type { NextAuthConfig, Session } from "next-auth";
+import NextAuth from "next-auth";
+import type { JWT } from "next-auth/jwt";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 const apiUrl = process.env.NEXT_PUBLIC_REST_API_URL;
+
+// Extend the default interfaces
+declare module "next-auth" {
+  interface User {
+    id?: string;
+    jwt?: string;
+  }
+
+  interface Session {
+    user: User & {
+      id: string;
+      jwt?: string;
+      image?: string | null;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    user?: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      jwt?: string;
+    };
+  }
+}
 
 export const authConfig: NextAuthConfig = {
   trustHost: true,
@@ -14,7 +43,6 @@ export const authConfig: NextAuthConfig = {
         identifier: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      // auth.ts
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) {
           console.log("Missing credentials");
@@ -32,7 +60,7 @@ export const authConfig: NextAuthConfig = {
               headers: {
                 "Content-Type": "application/json",
               },
-              timeout: 5000, // 5 second timeout
+              timeout: 5000,
             }
           );
 
@@ -46,6 +74,7 @@ export const authConfig: NextAuthConfig = {
             name: response.data.user.username,
             email: response.data.user.email,
             jwt: response.data.jwt,
+            image: response.data.user.profilePicture || null,
           };
         } catch (error) {
           if (axios.isAxiosError(error)) {
@@ -63,23 +92,56 @@ export const authConfig: NextAuthConfig = {
     }),
   ],
   callbacks: {
-    // Include JWT token in the session
-    async session({ session, token }) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      session.user = token.user as any;
+    async session({ session, token }: { session: Session; token: JWT }) {
+      // console.log("Session callback - token:", token);
+
+      if (token.user) {
+        session.user = {
+          ...session.user,
+          id: token.user.id,
+          name: token.user.name || null,
+          email: token.user.email || null,
+          image: token.user.image || null,
+          jwt: token.user.jwt,
+        };
+      }
+
+      // console.log("Session callback - final session:", session);
       return session;
     },
-    // Add user info and JWT to the token
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // console.log("JWT callback - user:", user);
+      // console.log("JWT callback - token:", token);
+
+      // Initial sign in
       if (user) {
-        token.user = user;
+        token.user = {
+          id: user.id || "",
+          name: user.name || null,
+          email: user.email || null,
+          image: user.image || null,
+          jwt: user.jwt,
+        };
       }
+
+      // Handle session updates
+      if (trigger === "update" && session?.user) {
+        token.user = {
+          ...token.user,
+          id: session.user.id,
+          name: session.user.name || null,
+          email: session.user.email || null,
+          image: session.user.image || null,
+          jwt: session.user.jwt,
+        };
+      }
+
       return token;
     },
   },
   pages: {
     signIn: "/login",
-    error: "/login", // Error code passed in query string as ?error=
+    error: "/login",
   },
   session: {
     strategy: "jwt",

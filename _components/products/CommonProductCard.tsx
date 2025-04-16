@@ -9,7 +9,7 @@ import BuyButtonContainer from "../productDetails/BuyButtonContainer";
 
 const CommonProductCard = ({ product }: { product: Product }) => {
   return (
-    <Card className="group border rounded-2xl border-gray-50/20 bg-transparent backdrop-blur-xs text-white shadow-md hover:shadow-lg py-0 gap-0 p-3 w-full  h-fit relative">
+    <Card className="group border rounded-2xl border-gray-50/20 bg-brand-3 backdrop-blur-2xl text-white overflow-hidden shadow-md hover:shadow-lg py-0 gap-0 p-3 w-full  h-fit relative">
       <FallbackImage
         src={product?.banner?.url}
         alt={`${product?.title} banner`}

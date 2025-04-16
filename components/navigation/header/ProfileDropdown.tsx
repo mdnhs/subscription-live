@@ -87,7 +87,7 @@ const ProfileDropdown = () => {
             <DropdownMenuTrigger className="focus:outline-none cursor-pointer">
               <Avatar>
                 <AvatarImage
-                  src={user?.profilePicture ?? "/images/profile-demo.jpeg"}
+                  src={session.user?.image ?? "/images/profile-demo.jpeg"}
                 />
                 <AvatarFallback>UE</AvatarFallback>
               </Avatar>
@@ -148,7 +148,7 @@ const ProfileDropdown = () => {
     adminUrl,
     clearSession,
     user?.isAdmin,
-    user?.profilePicture,
+    session?.user?.image,
   ]);
 
   return (

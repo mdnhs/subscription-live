@@ -25,7 +25,11 @@ interface UserState {
   getCurrentUser: (jwtToken: string) => Promise<void>;
   getTotalUsers: () => Promise<void>;
   updateUser: (jwtToken: string, data: Partial<User>) => Promise<void>;
-  updatePassword: (jwtToken: string, currentPassword: string, newPassword: string) => Promise<void>;
+  updatePassword: (
+    jwtToken: string,
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<void>;
   uploadProfilePicture: (jwtToken: string, file: File) => Promise<string>;
 }
 
@@ -54,7 +58,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     // Check if already fetching
     if (state.isFetching[cacheKey]) return;
 
-    set({ loading: true, error: null, isFetching: { ...state.isFetching, [cacheKey]: true } });
+    set({
+      loading: true,
+      error: null,
+      isFetching: { ...state.isFetching, [cacheKey]: true },
+    });
     try {
       const response = await fetch(`${apiUrl}/api/users/me`, {
         method: "GET",
@@ -77,7 +85,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         isFetching: { ...state.isFetching, [cacheKey]: false },
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
       console.error("Error fetching user:", error);
       set({
         user: null,
@@ -101,7 +110,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     // Check if already fetching
     if (state.isFetching[cacheKey]) return;
 
-    set({ loading: true, error: null, isFetching: { ...state.isFetching, [cacheKey]: true } });
+    set({
+      loading: true,
+      error: null,
+      isFetching: { ...state.isFetching, [cacheKey]: true },
+    });
     try {
       const response = await fetch(`${apiUrl}/api/users`, {
         method: "GET",
@@ -124,7 +137,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         isFetching: { ...state.isFetching, [cacheKey]: false },
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
       console.error("Error fetching users:", error);
       set({
         loading: false,
@@ -141,7 +155,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     // Check if already fetching
     if (state.isFetching[cacheKey]) return;
 
-    set({ loading: true, error: null, isFetching: { ...state.isFetching, [cacheKey]: true } });
+    set({
+      loading: true,
+      error: null,
+      isFetching: { ...state.isFetching, [cacheKey]: true },
+    });
     try {
       const userId = state.user?.id;
       if (!userId) throw new Error("No user ID available");
@@ -158,7 +176,9 @@ export const useUserStore = create<UserState>((set, get) => ({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          `Failed to update user: ${errorData.error?.message || response.statusText}`
+          `Failed to update user: ${
+            errorData.error?.message || response.statusText
+          }`
         );
       }
 
@@ -171,7 +191,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         isFetching: { ...state.isFetching, [cacheKey]: false },
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
       set({
         loading: false,
         error: errorMessage,
@@ -180,14 +201,22 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
-  updatePassword: async (jwtToken: string, currentPassword: string, newPassword: string) => {
+  updatePassword: async (
+    jwtToken: string,
+    currentPassword: string,
+    newPassword: string
+  ) => {
     const cacheKey = `updatePassword_${jwtToken}`;
     const state = get();
 
     // Check if already fetching
     if (state.isFetching[cacheKey]) return;
 
-    set({ loading: true, error: null, isFetching: { ...state.isFetching, [cacheKey]: true } });
+    set({
+      loading: true,
+      error: null,
+      isFetching: { ...state.isFetching, [cacheKey]: true },
+    });
     try {
       const response = await fetch(`${apiUrl}/api/auth/change-password`, {
         method: "POST",
@@ -205,7 +234,9 @@ export const useUserStore = create<UserState>((set, get) => ({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          `Failed to update password: ${errorData.error?.message || response.statusText}`
+          `Failed to update password: ${
+            errorData.error?.message || response.statusText
+          }`
         );
       }
 
@@ -215,7 +246,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         isFetching: { ...state.isFetching, [cacheKey]: false },
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
       set({
         loading: false,
         error: errorMessage,
@@ -224,7 +256,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
-  uploadProfilePicture: async (jwtToken: string, file: File): Promise<string> => {
+  uploadProfilePicture: async (
+    jwtToken: string,
+    file: File
+  ): Promise<string> => {
     const cacheKey = `uploadProfilePicture_${jwtToken}_${file.name}`; // Unique key per file
     const state = get();
 
@@ -233,7 +268,11 @@ export const useUserStore = create<UserState>((set, get) => ({
       throw new Error("Upload already in progress");
     }
 
-    set({ loading: true, error: null, isFetching: { ...state.isFetching, [cacheKey]: true } });
+    set({
+      loading: true,
+      error: null,
+      isFetching: { ...state.isFetching, [cacheKey]: true },
+    });
     try {
       const formData = new FormData();
       formData.append("files", file);
@@ -248,7 +287,9 @@ export const useUserStore = create<UserState>((set, get) => ({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          `Failed to upload profile picture: ${errorData.error?.message || response.statusText}`
+          `Failed to upload profile picture: ${
+            errorData.error?.message || response.statusText
+          }`
         );
       }
 
@@ -261,7 +302,8 @@ export const useUserStore = create<UserState>((set, get) => ({
       });
       return imageUrl;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
       set({
         loading: false,
         error: errorMessage,

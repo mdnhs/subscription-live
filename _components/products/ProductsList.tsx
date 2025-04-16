@@ -19,7 +19,7 @@ const ProductsList = ({ products, type }: Props) => {
     type === "week" ? "lg:basis-1/3" : "lg:basis-1/4"
   } `;
   return (
-    <div className="w-full container overflow-x-clip">
+    <div className="w-full container overflow-x-clip pr-6">
       <Carousel
         plugins={[
           Autoplay({
@@ -51,7 +51,7 @@ const ProductsList = ({ products, type }: Props) => {
           ))}
         </CarouselContent>
         <CarouselPrevious className="-left-2" />
-        <CarouselNext className="-right-1" />
+        <CarouselNext className="-right-2" />
       </Carousel>
     </div>
   );

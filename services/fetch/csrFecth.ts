@@ -11,6 +11,7 @@ type fetchType = {
   cache?: "no-store" | "store";
   payload?: any;
   server?: string;
+  jwtToken?: string;
 };
 
 const apiKey = process.env.NEXT_PUBLIC_REST_API_KEY;
@@ -31,28 +32,42 @@ const useFetch = () => {
     async (props: fetchType) => {
       setIsPending(true);
       try {
-        const response = await fetch(`${props.server ?? apiUrl}${props.path}`, {
-          cache: props.cache ?? "no-store",
-          method: props.method,
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          ...(props.method !== "GET" &&
-            props.payload && { body: JSON.stringify(props.payload) }),
+        const headers: Record<string, string> = {
+          Accept: "application/json",
+          Authorization: `Bearer ${props?.jwtToken ?? apiKey}`,
+        };
+
+        // Only set Content-Type for non-FormData payloads
+        if (!(props?.payload instanceof FormData)) {
+          headers["Content-Type"] = "application/json";
+        }
+
+        const response = await fetch(`${props?.server ?? apiUrl}${props?.path}`, {
+          cache: props?.cache ?? "no-store",
+          method: props?.method,
+          headers,
+          ...(props?.method !== "GET" &&
+            props?.payload && {
+              body:
+                props?.payload instanceof FormData
+                  ? props?.payload
+                  : JSON.stringify(props?.payload),
+            }),
         });
 
         setIsPending(false);
 
         const json = await response.json();
-
         const res = {
           success: response.ok,
-          data: json?.data ?? [],
+          data:
+            props?.payload instanceof FormData
+              ? json
+              : Array.isArray(json)
+              ? (json as Record<string, any>).data
+              : json,
           message: json?.message,
         };
-
         if (!response.ok) throw res;
 
         return res;

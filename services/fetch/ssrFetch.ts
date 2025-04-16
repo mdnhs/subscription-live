@@ -6,6 +6,7 @@ export type fetchTypePublic = {
   payload?: any;
   server?: string;
   revalidate?: number;
+  jwtToken?: string;
 };
 
 const apiKey = process.env.NEXT_PUBLIC_REST_API_KEY;
@@ -13,15 +14,15 @@ const apiUrl = process.env.NEXT_PUBLIC_REST_API_URL;
 
 const fetchPublic = async (props: fetchTypePublic) => {
   try {
-    const res = await fetch(`${props.server ?? apiUrl}${props.path}`, {
-      next: { revalidate: props.revalidate ?? 0 },
-      method: props.method ?? "GET",
+    const res = await fetch(`${props?.server ?? apiUrl}${props?.path}`, {
+      next: { revalidate: props?.revalidate ?? 0 },
+      method: props?.method ?? "GET",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${props?.jwtToken ?? apiKey}`,
       },
-      ...(props.payload && { body: JSON.stringify(props.payload) }),
+      ...(props?.payload && { body: JSON.stringify(props?.payload) }),
     });
     const data = res.json();
     return data;

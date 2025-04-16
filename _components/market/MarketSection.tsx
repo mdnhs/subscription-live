@@ -32,7 +32,7 @@ type SortOption =
   | "name-az"
   | "name-za";
 
-const ExploreSection = ({ products }: { products: Product[] }) => {
+const MarketSection = ({ products }: { products: Product[] }) => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [instantDelivery, setInstantDelivery] = useState(false);
@@ -212,7 +212,8 @@ const ExploreSection = ({ products }: { products: Product[] }) => {
       </div>
 
       {/* Desktop Filters */}
-      <div className="hidden md:block w-[300px] space-y-6">
+      <div className="hidden md:block w-[300px] space-y-6 bg-brand-1/[3%] border rounded-2xl border-gray-50/20 p-5 backdrop-blur-sm h-fit relative overflow-hidden">
+        <div className="absolute bg-brand-1/30 -left-10 -top-10 h-40 w-40 rounded-full blur-3xl -z-10"></div>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Filters</h3>
           <Button
@@ -249,7 +250,7 @@ const ExploreSection = ({ products }: { products: Product[] }) => {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-12"
               />
               {searchQuery && (
                 <Button
@@ -267,7 +268,7 @@ const ExploreSection = ({ products }: { products: Product[] }) => {
               value={sortBy}
               onValueChange={(value) => setSortBy(value as SortOption)}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40 !h-12">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -454,4 +455,4 @@ const FilterContent = ({
   </Accordion>
 );
 
-export default ExploreSection;
+export default MarketSection;
