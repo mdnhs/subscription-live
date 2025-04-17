@@ -2,11 +2,18 @@
 import { User } from "@/_types/usersTypes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Edit, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Edit, X, Copy } from "lucide-react";
 import { useState } from "react";
 import ProfileFormContainer from "./ProfileFormContainer";
 import ProfileInfoShow from "./ProfileInfoShow";
 import ProfilePictureUploader from "./ProfilePictureUploader";
+import { toast } from "sonner";
 
 interface ProfileSectionProps {
   user: User;
@@ -24,6 +31,45 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
     setPreviewImageUrl(previewUrl);
   };
 
+  const copyOptions = [
+    {
+      type: "string" as const,
+      label: "Copy username",
+      successMessage: "Username copied to clipboard!",
+    },
+    {
+      type: "link" as const,
+      label: "Copy profile link",
+      successMessage: "Profile link copied to clipboard!",
+    },
+    {
+      type: "referLink" as const,
+      label: "Copy refer link",
+      successMessage: "Refer link copied to clipboard!",
+    },
+  ];
+
+  const copyUsername = async (type: "string" | "link" | "referLink") => {
+    try {
+      let textToCopy = "";
+      if (type === "string") {
+        textToCopy = userData.username;
+      } else if (type === "link") {
+        textToCopy = `${window.location.origin}/profile/${userData.username}`;
+      } else {
+        textToCopy = `${process.env.NEXTAUTH_URL}/register?referId=${userData.username}`;
+      }
+
+      await navigator.clipboard.writeText(textToCopy);
+
+      const option = copyOptions.find((opt) => opt.type === type);
+      toast.success(option?.successMessage);
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+      toast.error("Failed to copy to clipboard");
+    }
+  };
+
   return (
     <div className="container py-8 px-4">
       <Card className="max-w-3xl mx-auto shadow-md">
@@ -39,7 +85,26 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
             />
 
             <div className="text-center sm:text-left flex-1">
-              <h2 className="text-2xl font-bold">{userData?.username}</h2>
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <h2 className="text-2xl font-bold">{userData?.username}</h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {copyOptions.map((option) => (
+                      <DropdownMenuItem
+                        key={option.type}
+                        onClick={() => copyUsername(option.type)}
+                      >
+                        {option.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <p className="text-muted-foreground mb-3">{userData?.email}</p>
               <div className="flex gap-2 justify-center sm:justify-start">
                 {!isEditing ? (
@@ -58,7 +123,7 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
                     size="sm"
                     className="text-red-500 hover:text-red-400"
                   >
-                    <X className="mr-2 h-4 w-4 " />
+                    <X className="mr-2 h-4 w-4" />
                     Cancel Edit
                   </Button>
                 )}
@@ -69,6 +134,7 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
           {!isEditing ? (
             <ProfileInfoShow
               id={userData.id.toString()}
+              fullName={userData.fullName || ""}
               username={userData.username || ""}
               email={userData.email || ""}
               phoneNumber={userData.phoneNumber || ""}

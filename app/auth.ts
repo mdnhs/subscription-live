@@ -1,4 +1,3 @@
-import axios from "axios";
 import type { NextAuthConfig, Session } from "next-auth";
 import NextAuth from "next-auth";
 import type { JWT } from "next-auth/jwt";
@@ -50,42 +49,37 @@ export const authConfig: NextAuthConfig = {
         }
 
         try {
-          const response = await axios.post(
-            `${apiUrl}/api/auth/local`,
-            {
+          const response = await fetch(`${apiUrl}/api/auth/local`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
               identifier: credentials.identifier,
               password: credentials.password,
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-              timeout: 5000,
-            }
-          );
+            }),
+            signal: AbortSignal.timeout(5000), // Equivalent to axios timeout
+          });
 
-          if (response.status !== 200) {
+          const data = await response.json();
+
+          if (!response.ok) {
             console.log("Strapi returned non-200 status:", response.status);
             return null;
           }
 
           return {
-            id: response.data.user.id.toString(),
-            name: response.data.user.username,
-            email: response.data.user.email,
-            jwt: response.data.jwt,
-            image: response.data.user.profilePicture || null,
+            id: data.user.id.toString(),
+            name: data.user.username,
+            email: data.user.email,
+            jwt: data.jwt,
+            image: data.user.profilePicture || null,
           };
         } catch (error) {
-          if (axios.isAxiosError(error)) {
-            console.log("Axios error details:", {
-              message: error.message,
-              response: error.response?.data,
-              status: error.response?.status,
-            });
-          } else {
-            console.log("Unexpected error:", error);
-          }
+          console.log("Fetch error:", {
+            message: error instanceof Error ? error.message : "Unknown error",
+            cause: error instanceof Error ? error.cause : undefined,
+          });
           return null;
         }
       },
@@ -93,8 +87,6 @@ export const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     async session({ session, token }: { session: Session; token: JWT }) {
-      // console.log("Session callback - token:", token);
-
       if (token.user) {
         session.user = {
           ...session.user,
@@ -105,15 +97,9 @@ export const authConfig: NextAuthConfig = {
           jwt: token.user.jwt,
         };
       }
-
-      // console.log("Session callback - final session:", session);
       return session;
     },
     async jwt({ token, user, trigger, session }) {
-      // console.log("JWT callback - user:", user);
-      // console.log("JWT callback - token:", token);
-
-      // Initial sign in
       if (user) {
         token.user = {
           id: user.id || "",
@@ -124,7 +110,6 @@ export const authConfig: NextAuthConfig = {
         };
       }
 
-      // Handle session updates
       if (trigger === "update" && session?.user) {
         token.user = {
           ...token.user,

@@ -14,6 +14,7 @@ export default async function ProfilePage() {
     id: 0,
     username: "",
     email: "",
+    fullName: "",
   };
   try {
     const req = getCurrentUser(jwt);

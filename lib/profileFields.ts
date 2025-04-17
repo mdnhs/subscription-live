@@ -6,6 +6,7 @@ export type ProfileFormValues = z.infer<typeof profileSchema>;
 export type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export const profileFields: FieldConfig<ProfileFormValues>[] = [
+  { name: "fullName", label: "Full Name", placeholder: "Your Full Name" },
   { name: "username", label: "Username", placeholder: "Your username" },
   { name: "email", label: "Email", placeholder: "Your email" },
   { name: "phoneNumber", label: "Phone Number", placeholder: "+1234567890" },

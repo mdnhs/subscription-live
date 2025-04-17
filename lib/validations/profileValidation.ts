@@ -1,11 +1,12 @@
 import { z } from "zod";
 
 export const profileSchema = z.object({
-  username: z.string().min(2, "Username must be at least 2 characters"),
+  fullName: z.string().min(3, "Username must be at least 3 characters"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
   bio: z.string().max(500, "Bio must be less than 500 characters").optional(),
   birthDate: z.string().optional(),
-  phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number"),
+  phoneNumber: z.string().regex(/^\+?[0-9]\d{1,14}$/, "Invalid phone number"),
   gender: z.enum(["male", "female", "other"]).optional(),
   religion: z
     .enum(["islam", "hinduism", "christianity", "buddhism", "other"])

@@ -1,15 +1,6 @@
 "use client";
-import React, { useMemo, useState } from "react";
-import { Accordion } from "@/components/ui/accordion";
-import ProfileFormSection from "./ProfileFormSection";
-import { Button } from "@/components/ui/button";
 import { User } from "@/_types/usersTypes";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  passwordSchema,
-  profileSchema,
-} from "@/lib/validations/profileValidation";
+import { Accordion } from "@/components/ui/accordion";
 import {
   passwordFields,
   PasswordFormValues,
@@ -17,13 +8,21 @@ import {
   ProfileFormValues,
 } from "@/lib/profileFields";
 import {
+  passwordSchema,
+  profileSchema,
+} from "@/lib/validations/profileValidation";
+import {
   updatePassword,
   updateUser,
   uploadProfilePicture,
 } from "@/services/api/userRequest";
 import useFetch from "@/services/fetch/csrFecth";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useSession } from "next-auth/react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import ProfileFormSection from "./ProfileFormSection";
 
 interface ProfileSectionProps {
   user: User;
@@ -57,6 +56,7 @@ const ProfileFormContainer = ({
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
+      fullName: user.fullName || "",
       username: user.username || "",
       email: user.email || "",
       bio: user.bio || "",
@@ -112,6 +112,7 @@ const ProfileFormContainer = ({
 
       // Reset form with updated user data
       profileForm.reset({
+        fullName: updatedUser.fullName || "",
         username: updatedUser.username || "",
         email: updatedUser.email || "",
         bio: updatedUser.bio || "",

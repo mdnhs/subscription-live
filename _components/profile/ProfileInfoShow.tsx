@@ -6,6 +6,7 @@ import {
 import React from "react";
 
 interface ProfileInfoProps {
+  fullName: string;
   username: string;
   email: string;
   phoneNumber: string;
@@ -17,6 +18,7 @@ interface ProfileInfoProps {
 }
 
 const ProfileInfoShow: React.FC<ProfileInfoProps> = ({
+  fullName,
   username,
   email,
   phoneNumber,
@@ -29,6 +31,14 @@ const ProfileInfoShow: React.FC<ProfileInfoProps> = ({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">Full Name</p>
+          <p className="font-medium">{fullName ?? ""}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">Username</p>
+          <p className="font-medium">{username ?? ""}</p>
+        </div>
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground">Username</p>
           <p className="font-medium">{username ?? ""}</p>

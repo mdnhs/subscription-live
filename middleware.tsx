@@ -2,7 +2,7 @@ import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const authRoutes = ["/login"];
+const authRoutes = ["/login","/register"];
 const privateRoutes = ["/my-orders", "/checkout"];
 const PUBLIC_PATHS = [
   "/api",

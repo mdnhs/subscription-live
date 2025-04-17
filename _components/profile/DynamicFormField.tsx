@@ -39,11 +39,9 @@ const DateField = <T extends FieldValues>({
   calendarOpen: boolean;
   setCalendarOpen: (open: boolean) => void;
 }) => {
-  // Initialize calendarDate with form value or current date
   const initialDate = formField.value ? new Date(formField.value) : new Date();
   const [calendarDate, setCalendarDate] = useState(initialDate);
 
-  // Generate arrays for months and years
   const months = Array.from({ length: 12 }, (_, i) => ({
     value: i,
     label: format(new Date(2023, i, 1), "MMMM"),
@@ -57,13 +55,13 @@ const DateField = <T extends FieldValues>({
     if (date) {
       formField.onChange(date.toISOString());
       setCalendarDate(date);
-      setCalendarOpen(false); // Close the calendar only when day is selected
+      setCalendarOpen(false);
     }
   };
 
   const handleMonthYearChange = (newDate: Date) => {
     setCalendarDate(newDate);
-    formField.onChange(newDate.toISOString()); // Still update form value immediately
+    formField.onChange(newDate.toISOString());
   };
 
   return (
@@ -88,7 +86,6 @@ const DateField = <T extends FieldValues>({
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <div className="p-2 flex flex-col space-y-2">
-          {/* Month and Year Selectors */}
           <div className="flex space-x-2">
             <Select
               value={calendarDate.getMonth().toString()}
@@ -98,7 +95,7 @@ const DateField = <T extends FieldValues>({
               }}
             >
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Select month" />
+                <SelectValue placeholder="Month" />
               </SelectTrigger>
               <SelectContent>
                 {months.map((month) => (
@@ -116,7 +113,7 @@ const DateField = <T extends FieldValues>({
               }}
             >
               <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Select year" />
+                <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
                 {years.map((year) => (
@@ -127,7 +124,6 @@ const DateField = <T extends FieldValues>({
               </SelectContent>
             </Select>
           </div>
-          {/* Calendar */}
           <Calendar
             mode="single"
             selected={formField.value ? new Date(formField.value) : undefined}
@@ -157,25 +153,35 @@ const DynamicFormField = <T extends FieldValues>({
 
   // Handle Select field
   if (field.options) {
+    // Find if there's an "other" option
+    const hasOtherOption = field.options.some(opt => opt.value === "other");
+    const defaultValue = hasOtherOption ? "other" : field.options[0]?.value;
+
     return (
       <FormField
         control={form.control}
         name={field.name}
+        defaultValue={defaultValue as T[keyof T]}
         render={({ field: formField }) => (
           <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
             <FormLabel>{field.label}</FormLabel>
             <Select
               onValueChange={formField.onChange}
-              defaultValue={formField.value}
+              value={formField.value}
+              defaultValue={defaultValue}
             >
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white">
                   <SelectValue placeholder={field.placeholder} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {field.options?.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                {(field.options ?? []).map((option) => (
+                  <SelectItem 
+                    key={option.value} 
+                    value={option.value}
+                    className="hover:bg-gray-100"
+                  >
                     {option.label}
                   </SelectItem>
                 ))}
@@ -210,7 +216,7 @@ const DynamicFormField = <T extends FieldValues>({
     );
   }
 
-  // Handle other input types (text, password, etc.)
+  // Handle other input types
   return (
     <FormField
       control={form.control}
@@ -228,19 +234,24 @@ const DynamicFormField = <T extends FieldValues>({
                 }
                 placeholder={field.placeholder}
                 {...formField}
+                readOnly={field.name === "username"}
+                className={cn(
+                  "bg-white",
+                  field.name === "username" ? "opacity-70" : ""
+                )}
               />
               {field.type === "password" && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4 text-gray-500" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-gray-500" />
                   )}
                 </Button>
               )}

@@ -42,32 +42,31 @@ const useFetch = () => {
           headers["Content-Type"] = "application/json";
         }
 
-        const response = await fetch(`${props?.server ?? apiUrl}${props?.path}`, {
-          cache: props?.cache ?? "no-store",
-          method: props?.method,
-          headers,
-          ...(props?.method !== "GET" &&
-            props?.payload && {
-              body:
-                props?.payload instanceof FormData
-                  ? props?.payload
-                  : JSON.stringify(props?.payload),
-            }),
-        });
+        const response = await fetch(
+          `${props?.server ?? apiUrl}${props?.path}`,
+          {
+            cache: props?.cache ?? "no-store",
+            method: props?.method,
+            headers,
+            ...(props?.method !== "GET" &&
+              props?.payload && {
+                body:
+                  props?.payload instanceof FormData
+                    ? props?.payload
+                    : JSON.stringify(props?.payload),
+              }),
+          }
+        );
 
         setIsPending(false);
 
         const json = await response.json();
         const res = {
           success: response.ok,
-          data:
-            props?.payload instanceof FormData
-              ? json
-              : Array.isArray(json)
-              ? (json as Record<string, any>).data
-              : json,
+          data: json,
           message: json?.message,
         };
+        console.log(res);
         if (!response.ok) throw res;
 
         return res;
@@ -77,7 +76,7 @@ const useFetch = () => {
 
         const isNetworkError = !error?.status && isOnline;
         const errorMessage = isNetworkError
-          ? "Service unavailable due to technical maintenance."
+          ? error?.data?.error?.message
           : error.message || "An unexpected error occurred.";
 
         const res = { success: false, data: [], message: errorMessage };
