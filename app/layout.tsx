@@ -9,6 +9,7 @@ import { AuthProvider } from "./provider";
 import { aboreto, bruno, montserrat } from "./font";
 import { siteConfig } from "./site";
 import Footer from "@/components/navigation/footer/Footer";
+import { FallbackImage } from "@/_components/container/FallbackImage";
 
 export const metadata: Metadata = {
   title: `${siteConfig.websiteName} - ${siteConfig.websiteTagline}`,
@@ -21,19 +22,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className=" overflow-x-hidden">
       <body
-        className={`${montserrat.variable} ${bruno.variable} ${aboreto.variable} font-montserrat antialiased relative bg-brand-3 overflow-x-hidden`}
+        className={`${montserrat.variable} ${bruno.variable} ${aboreto.variable} font-montserrat antialiased relative bg-brand-3 overflow-x-hidden !min-w-full`}
       >
         <Toaster position="bottom-right" richColors />
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
           <AuthProvider>
             <Header />
+            <FallbackImage
+              src={"/images/hero-left-bg.svg"}
+              className=" h-[1500px] w-[1500px] absolute -top-80 left-0 pointer-events-none  -z-10"
+            />
             {children}
             <Footer />
             <SpeedInsights />

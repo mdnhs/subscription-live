@@ -33,7 +33,6 @@ const PageContent = () => {
     if (!isHydrated || !orderId || !paymentID) {
       return; // Silently wait until both are available
     }
-
     const processOrder = async () => {
       const payload = {
         data: {
@@ -68,7 +67,7 @@ const PageContent = () => {
   }, [fetchPublic, orderId, paymentID, isHydrated, expireDate]);
 
   return (
-    <div className="container py-5">
+    <div className="container">
       <div className="flex flex-col gap-8 min-h-screen items-center justify-center bg-background/95 text-white rounded-2xl">
         <CircleCheckBig className="size-36 text-teal-600" />
         <div className="flex flex-col gap-4 items-center">
@@ -88,7 +87,7 @@ const PageContent = () => {
             <House size={18} /> Home
           </Link>
           <Link
-            href="/my-orders"
+            href="/my-account?tab=my-orders"
             className="flex gap-2 rounded bg-teal-600 px-5 py-3 text-sm text-white transition hover:bg-teal-700"
           >
             <ShoppingBag size={18} /> My Orders

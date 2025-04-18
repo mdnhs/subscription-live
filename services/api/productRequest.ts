@@ -14,6 +14,14 @@ const getProductById: any = (id: string) => {
   };
 };
 
+const setProductById: any = (payload: any, id: string) => {
+  return {
+    method: "PUT",
+    path: `/api/products/${id}`,
+    payload: payload,
+  };
+};
+
 const getProductsByCategory: any = (category: string) => {
   return {
     method: "GET",
@@ -21,4 +29,4 @@ const getProductsByCategory: any = (category: string) => {
   };
 };
 
-export { getProducts, getProductById, getProductsByCategory };
+export { getProducts, getProductById, getProductsByCategory, setProductById };

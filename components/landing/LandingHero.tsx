@@ -8,7 +8,7 @@ import {
 const LandingHero = () => {
   return (
     <section className="container h-[calc(100vh-60vh)] md:h-[calc(100vh-40vh)]">
-      <div className="flex gap-4 items-center h-full pt-20">
+      <div className="flex gap-4 items-center h-full pt-28">
         <div className="basis-1/2 space-y-10 relative">
           <FallbackImage
             src={"/icons/star.svg"}
@@ -31,7 +31,10 @@ const LandingHero = () => {
             with us
           </h1>
           <div className="flex gap-4">
-            <BuyButton btnText="Dashboard" target="/my-orders" />
+            <BuyButton
+              btnText="Dashboard"
+              target="/my-account?tab=my-orders"
+            />
             <LinkButton btnText="Go To Market" target="/market" />
           </div>
         </div>

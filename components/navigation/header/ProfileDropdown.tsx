@@ -1,6 +1,5 @@
 "use client";
 import { User as UserType } from "@/_types/usersTypes";
-import { ModeToggle } from "@/components/ModeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,8 +129,10 @@ const ProfileDropdown = () => {
                 <AvatarFallback>UE</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="mt-2">
-              <DropdownMenuLabel>Control Panel</DropdownMenuLabel>
+            <DropdownMenuContent
+              className="mt-2"
+            >
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {userData?.isAdmin && (
                 <Link href={adminUrl} target="_blank">
@@ -141,13 +142,13 @@ const ProfileDropdown = () => {
                   </DropdownMenuItem>
                 </Link>
               )}
-              <Link href="/profile">
+              <Link href="/my-account?tab=profile">
                 <DropdownMenuItem className="cursor-pointer">
                   <User />
                   Profile
                 </DropdownMenuItem>
               </Link>
-              <Link href="/my-orders">
+              <Link href="/my-account?tab=my-orders">
                 <DropdownMenuItem className="cursor-pointer">
                   <ShoppingBag />
                   My Orders
@@ -212,11 +213,11 @@ const ProfileDropdown = () => {
       )}
 
       {SessionButton}
-      {status === "loading" ? (
+      {/* {status === "loading" ? (
         <Button className="rounded-full h-9 w-9 animate-pulse dark:bg-gray-500 bg-gray-200"></Button>
       ) : (
         <ModeToggle />
-      )}
+      )} */}
     </>
   );
 };

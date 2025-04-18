@@ -5,7 +5,7 @@ import { getOrders } from "@/services/api/orderRequest";
 import { fetchPublic } from "@/services/fetch/ssrFetch";
 import { useEffect, useState } from "react";
 import OrderSection from "./OrderSection"; // Adjust path if needed
-import Skeleton from "./Skeleton"; // Adjust path if needed
+// import Skeleton from "./Skeleton"; // Adjust path if needed
 
 interface OrdersClientProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,9 +42,8 @@ export default function OrdersClient({
     return () => clearTimeout(timer);
   }, [email]); // Re-run if email changes
 
-  if (isLoading) {
-    return <Skeleton />;
-  }
-console.log(orders,"++%");
+  // if (isLoading) {
+  //   return <Skeleton />;
+  // }
   return <OrderSection orders={orders} />;
 }

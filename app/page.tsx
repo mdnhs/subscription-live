@@ -1,5 +1,4 @@
 // app/page.tsx
-import { FallbackImage } from "@/_components/container/FallbackImage";
 import ProductSection from "@/_components/products/ProductSection";
 import LandingHero from "@/components/landing/LandingHero";
 import { getProducts } from "@/services/api/productRequest";
@@ -16,11 +15,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen relative overflow-x-hidden">
-      <FallbackImage
-        src={"/images/hero-left-bg.svg"}
-        className=" h-[1500px] w-[1500px] absolute -top-80 left-0 pointer-events-none opacity-90 -z-10"
-      />
+    <main className="min-h-screen">
       <LandingHero />
 
       {/* Products Section with enhanced styling */}

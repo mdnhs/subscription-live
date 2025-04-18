@@ -57,6 +57,13 @@ export interface Product {
     updatedAt: string;
     publishedAt: string;
   }>;
+  reviews: Array<{
+    id: string;
+    rating: number;
+    comment: string;
+    user: string;
+    date: string;
+  }>;
 }
 
 export interface ToolsResponse {

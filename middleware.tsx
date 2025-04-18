@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const authRoutes = ["/login","/register"];
-const privateRoutes = ["/my-orders", "/checkout"];
+const privateRoutes = ["/my-account", "/checkout"];
 const PUBLIC_PATHS = [
   "/api",
   "/_next/static",

@@ -30,7 +30,7 @@ export default async function Page({
   }
 
   return (
-    <div className="container py-5">
+    <div className="container pt-28 pb-8">
       <ProductDetails product={productsDetails} />
     </div>
   );

@@ -8,4 +8,12 @@ const getTool: any = () => {
   };
 };
 
-export { getTool };
+const updateTool: any = (id: string, payload:any) => {
+  return {
+    method: "PUT",
+    path: `/api/tools/${id}`,
+    payload: payload,
+  };
+};
+
+export { getTool, updateTool };

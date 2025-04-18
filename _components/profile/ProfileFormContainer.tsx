@@ -19,13 +19,12 @@ import {
 import useFetch from "@/services/fetch/csrFecth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSession } from "next-auth/react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react"; // Add useEffect
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import ProfileFormSection from "./ProfileFormSection";
 
 interface ProfileSectionProps {
-  user: User;
   isUpdating: boolean;
   userData: User;
   profilePic: File | null;
@@ -36,7 +35,6 @@ interface ProfileSectionProps {
 }
 
 const ProfileFormContainer = ({
-  user,
   isUpdating,
   userData,
   profilePic,
@@ -56,18 +54,34 @@ const ProfileFormContainer = ({
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      fullName: user.fullName || "",
-      username: user.username || "",
-      email: user.email || "",
-      bio: user.bio || "",
+      fullName: userData.fullName || "",
+      username: userData.username || "",
+      email: userData.email || "",
+      bio: userData.bio || "",
       birthDate: userData.birthDate
         ? new Date(userData.birthDate).toLocaleDateString().split("T")[0]
         : "",
-      phoneNumber: user.phoneNumber || "",
-      gender: user.gender,
-      religion: user.religion,
+      phoneNumber: userData.phoneNumber || "",
+      gender: userData.gender,
+      religion: userData.religion,
     },
   });
+
+  // Reset form when userData changes
+  useEffect(() => {
+    profileForm.reset({
+      fullName: userData.fullName || "",
+      username: userData.username || "",
+      email: userData.email || "",
+      bio: userData.bio || "",
+      birthDate: userData.birthDate
+        ? new Date(userData.birthDate).toLocaleDateString().split("T")[0]
+        : "",
+      phoneNumber: userData.phoneNumber || "",
+      gender: userData.gender,
+      religion: userData.religion,
+    });
+  }, [userData, profileForm]);
 
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -76,6 +90,7 @@ const ProfileFormContainer = ({
       newPassword: "",
     },
   });
+
   const handleProfileSubmit = async (data: ProfileFormValues) => {
     if (!jwtToken) {
       profileForm.setError("root", { message: "Authentication required" });
@@ -110,20 +125,6 @@ const ProfileFormContainer = ({
       };
       setUserData(updatedUser);
 
-      // Reset form with updated user data
-      profileForm.reset({
-        fullName: updatedUser.fullName || "",
-        username: updatedUser.username || "",
-        email: updatedUser.email || "",
-        bio: updatedUser.bio || "",
-        birthDate: updatedUser.birthDate
-          ? new Date(updatedUser.birthDate).toLocaleDateString().split("T")[0]
-          : "",
-        phoneNumber: updatedUser.phoneNumber || "",
-        gender: updatedUser.gender,
-        religion: updatedUser.religion,
-      });
-
       // Update session
       await updateSession({
         ...session,
@@ -136,8 +137,6 @@ const ProfileFormContainer = ({
           jwt: jwtToken,
         },
       });
-      const newSession = await updateSession();
-      console.log("Updated session after reload:", newSession);
       toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error) {
@@ -176,6 +175,7 @@ const ProfileFormContainer = ({
       setIsUpdating(false);
     }
   };
+
   return (
     <Accordion
       type="multiple"
