@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import OrderCard from "./OrderCard";
+import Link from "next/link";
 
 type SortOption =
   | "newest"
@@ -428,7 +429,9 @@ const EmptyOrderState = ({ type }: EmptyOrderStateProps) => {
         <p className="text-sm text-muted-foreground mt-2">
           {messages[type].description}
         </p>
+        <Link href={"/market"}>
         <Button className="mt-4">Browse Products</Button>
+        </Link>
       </div>
     </Card>
   );

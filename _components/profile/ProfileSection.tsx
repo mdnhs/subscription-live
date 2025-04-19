@@ -132,7 +132,7 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
 
         {!isEditing ? (
           <ProfileInfoShow
-            id={userData.id.toString()}
+            id={userData?.id?.toString()}
             fullName={userData.fullName || ""}
             username={userData.username || ""}
             email={userData.email || ""}

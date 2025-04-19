@@ -10,9 +10,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { getCroppedImg } from "@/lib/cropImage";
 import { Check, RotateCw, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import Cropper, { Area } from "react-easy-crop";
 
 interface ProfilePictureUploaderProps {
   currentImageUrl?: string;
@@ -31,22 +33,18 @@ const ProfilePictureUploader = ({
   disabled = false,
   isEditing = false,
 }: ProfilePictureUploaderProps) => {
-  const [profilePic, setProfilePic] = useState<File | null>(null);
   const [imageEditorOpen, setImageEditorOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
   const [processingImage, setProcessingImage] = useState(false);
 
-  // Image Editor State
+  // Crop state
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
-  const imageRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Size mapping for avatar
@@ -57,27 +55,18 @@ const ProfilePictureUploader = ({
     xl: "h-40 w-40",
   };
 
-  useEffect(() => {
-    // Only process the file and open editor if we have a profilePic and not currently processing
-    if (profilePic && !processingImage) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewImage(e.target?.result as string);
         setImageEditorOpen(true);
-        // Reset editing state
         setZoom(1);
         setRotation(0);
-        setPosition({ x: 0, y: 0 });
+        setCrop({ x: 0, y: 0 });
       };
-      reader.readAsDataURL(profilePic);
-    }
-  }, [profilePic, processingImage]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    if (file) {
-      setProcessingImage(false);
-      setProfilePic(file);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -93,107 +82,49 @@ const ProfilePictureUploader = ({
     }
   };
 
-  const handleDragStart = (e: React.MouseEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    });
+  const onCropComplete = (croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
   };
 
-  const handleDragMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging) {
-      setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      });
-    }
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
-
-  const handleZoomChange = (value: number[]) => {
-    setZoom(value[0]);
-  };
-
-  const handleRotate = () => {
-    setRotation((prev) => (prev + 90) % 360);
-  };
-
-  const applyImageEdit = () => {
-    if (!previewImage || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const applyImageEdit = async () => {
+    if (!previewImage || !croppedAreaPixels) return;
 
     setProcessingImage(true);
-
-    // Set canvas dimensions to match desired output
-    canvas.width = 300;
-    canvas.height = 300;
-
-    const img = new window.Image();
-    img.onload = () => {
-      ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Calculate the size of the image to fit within the canvas
-      const canvasSize = Math.min(canvas.width, canvas.height);
-      const imgAspect = img.width / img.height;
-      let drawWidth = img.width * zoom;
-      let drawHeight = img.height * zoom;
-
-      // Ensure the image fits within the circular crop area
-      if (imgAspect > 1) {
-        drawHeight = canvasSize / zoom;
-        drawWidth = drawHeight * imgAspect;
-      } else {
-        drawWidth = canvasSize / zoom;
-        drawHeight = drawWidth / imgAspect;
-      }
-
-      // Center the image on the canvas
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate((rotation * Math.PI) / 180);
-      ctx.drawImage(
-        img,
-        -drawWidth / 2 + position.x / zoom,
-        -drawHeight / 2 + position.y / zoom,
-        drawWidth,
-        drawHeight
+    try {
+      const croppedImageData = await getCroppedImg(
+        previewImage,
+        croppedAreaPixels,
+        rotation
       );
-      ctx.restore();
 
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-      setCroppedImage(dataUrl);
+      setCroppedImage(croppedImageData.url);
 
-      fetch(dataUrl)
-        .then((res) => res.blob())
-        .then((blob) => {
-          const newFile = new File([blob], "profile-picture.jpg", {
-            type: "image/jpeg",
-          });
-          setProfilePic(newFile);
-          setImageEditorOpen(false);
-          setPreviewImage(null);
-          if (onImageChange) {
-            onImageChange(newFile, dataUrl);
-          }
-        });
-    };
-    img.src = previewImage;
+      const newFile = new File([croppedImageData.file], "profile-picture.jpg", {
+        type: "image/jpeg",
+      });
+      
+      if (onImageChange) {
+        onImageChange(newFile, croppedImageData.url);
+      }
+      
+      // Close the dialog after successful crop
+      setImageEditorOpen(false);
+      setPreviewImage(null);
+    } catch (e) {
+      console.error("Error cropping image", e);
+    } finally {
+      setProcessingImage(false);
+    }
   };
 
   const cancelImageEdit = () => {
     setImageEditorOpen(false);
-    // Reset states if no cropped image exists
-    if (!croppedImage) {
-      setProfilePic(null);
-    }
     setPreviewImage(null);
     setProcessingImage(false);
+  };
+
+  const handleRotate = () => {
+    setRotation((prev) => (prev + 90) % 360);
   };
 
   return (
@@ -206,7 +137,7 @@ const ProfilePictureUploader = ({
           >
             <AvatarImage
               src={croppedImage || currentImageUrl}
-              className="object-contain"
+              className="object-cover"
             />
             <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary/70 to-primary/30 text-white">
               {fallbackInitial}
@@ -246,7 +177,6 @@ const ProfilePictureUploader = ({
           if (!open) {
             cancelImageEdit();
           }
-          setImageEditorOpen(open);
         }}
       >
         <DialogContent className="sm:max-w-md">
@@ -255,47 +185,22 @@ const ProfilePictureUploader = ({
           </DialogHeader>
 
           <div className="flex flex-col items-center gap-4">
-            {/* Hidden canvas for cropping */}
-            <canvas
-              ref={canvasRef}
-              className="hidden"
-              width="300"
-              height="300"
-            ></canvas>
-
-            {/* Image preview container */}
-            <div className="relative w-64 h-64 overflow-hidden rounded-full border-2 border-primary/20">
-              <div
-                ref={imageRef}
-                className="absolute cursor-move"
-                style={{
-                  transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
-                  transformOrigin: "center",
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-                onMouseDown={handleDragStart}
-                onMouseMove={handleDragMove}
-                onMouseUp={handleDragEnd}
-                onMouseLeave={handleDragEnd}
-              >
-                {previewImage && (
-                  <Image
-                    src={previewImage}
-                    alt="Preview"
-                    width={512}
-                    height={512}
-                    style={{
-                      maxHeight: "200%",
-                      maxWidth: "200%",
-                    }}
-                    objectFit="contain"
-                  />
-                )}
-              </div>
+            {/* Image cropping area */}
+            <div className="relative w-64 h-64">
+              {previewImage && (
+                <Cropper
+                  image={previewImage}
+                  crop={crop}
+                  zoom={zoom}
+                  rotation={rotation}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                  cropShape="round"
+                  showGrid={false}
+                />
+              )}
             </div>
 
             {/* Controls */}
@@ -304,10 +209,10 @@ const ProfilePictureUploader = ({
                 <ZoomOut className="h-4 w-4 text-muted-foreground" />
                 <Slider
                   value={[zoom]}
-                  min={0.5}
+                  min={1}
                   max={3}
                   step={0.1}
-                  onValueChange={handleZoomChange}
+                  onValueChange={(value) => setZoom(value[0])}
                 />
                 <ZoomIn className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -326,9 +231,9 @@ const ProfilePictureUploader = ({
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button onClick={applyImageEdit}>
+            <Button onClick={applyImageEdit} disabled={processingImage}>
               <Check className="h-4 w-4 mr-2" />
-              Apply
+              {processingImage ? "Processing..." : "Apply"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -347,8 +252,7 @@ const ProfilePictureUploader = ({
               alt="Profile Picture"
               width={400}
               height={400}
-              style={{ objectFit: "contain" }}
-              className="rounded-full"
+              className="object-cover rounded-full"
             />
           </div>
 
