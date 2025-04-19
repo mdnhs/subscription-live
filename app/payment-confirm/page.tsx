@@ -1,7 +1,9 @@
 "use client";
 import { setFormattedExpireDate } from "@/function/dateFormatter";
 import { updateOrder } from "@/services/api/orderRequest";
+import { updateTool } from "@/services/api/toolRequest";
 import useFetch from "@/services/fetch/csrFecth";
+import useGrantedToolsStore from "@/services/store/useGrantedToolsStore";
 import useOrderStore from "@/services/store/useOrderStore";
 import { CircleCheckBig, House, ShoppingBag } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +24,9 @@ const PageContent = () => {
     toolTerm ?? 0
   );
   const [isHydrated, setIsHydrated] = useState(false);
+  const { currentTool } = useGrantedToolsStore(); // Use the granted tools store
 
+  console.log(currentTool);
   // Detect when store is hydrated
   useEffect(() => {
     setIsHydrated(true);
@@ -45,7 +49,11 @@ const PageContent = () => {
       try {
         const req = updateOrder({ data: payload.data }, orderId);
         const response = await fetchPublic(req);
-
+        const _payload = {
+          data: { totalOrder: (currentTool?.totalOrder || 0) + 1 },
+        };
+        const _req = updateTool(currentTool?.documentId, _payload);
+        await fetchPublic(_req);
         if (!response.success) {
           throw new Error(response.message || "Failed to update order.");
         }
@@ -64,7 +72,15 @@ const PageContent = () => {
     };
 
     processOrder();
-  }, [fetchPublic, orderId, paymentID, isHydrated, expireDate]);
+  }, [
+    fetchPublic,
+    orderId,
+    paymentID,
+    isHydrated,
+    expireDate,
+    currentTool?.documentId,
+    currentTool?.totalOrder,
+  ]);
 
   return (
     <div className="container">

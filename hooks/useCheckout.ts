@@ -3,8 +3,8 @@ import useCartStore from "@/_store/CartStore";
 import { ToolsResponse } from "@/_types/product";
 import { getDistributionItems } from "@/services/api/distributionRequest";
 import { createOrder } from "@/services/api/orderRequest";
-import { updateTool } from "@/services/api/toolRequest";
 import useFetch from "@/services/fetch/csrFecth";
+import useGrantedToolsStore from "@/services/store/useGrantedToolsStore";
 import useOrderStore from "@/services/store/useOrderStore";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
@@ -19,6 +19,7 @@ const useCheckout = (tools: ToolsResponse[]) => {
   const { fetchPublic } = useFetch();
   const searchParams = useSearchParams();
   const fetchedRef = useRef(false);
+  const { setCurrentTool } = useGrantedToolsStore();
 
   const [selectedPayment, setSelectedPayment] = useState<string>("bkash");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -153,11 +154,7 @@ const useCheckout = (tools: ToolsResponse[]) => {
 
       const sessionData = await response.json();
       if (sessionData.bkashURL) {
-        const payload = {
-          data: { totalOrder: (grantedToolDetails.totalOrder || 0) + 1 },
-        };
-        const req = updateTool(grantedToolDetails.documentId, payload);
-        await fetchPublic(req);
+        setCurrentTool(grantedToolDetails);
         clearCart();
         window.location.href = sessionData.bkashURL;
       } else {

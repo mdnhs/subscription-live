@@ -11,6 +11,7 @@ const useCartCalculations = (
   const [products, setProducts] = useState<string[]>([]);
   const [grantedTool, setGrantedTool] = useState<string[]>([]);
   const [grantedToolDetails, setGrantedToolDetails] = useState<{
+    [x: string]: string;
     documentId?: string;
     totalOrder?: number;
   }>({});
