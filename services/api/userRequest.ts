@@ -40,6 +40,12 @@ const uploadProfilePicture: any = (jwtToken: string, payload: any) => {
     payload: payload,
   };
 };
+const getReferUser: any = (referUsername: string) => {
+  return {
+    method: "GET",
+    path: `/api/users?filters[username][$eq]=${referUsername}&populate=*`,
+  };
+};
 
 export {
   getCurrentUser,
@@ -47,4 +53,5 @@ export {
   updateUser,
   updatePassword,
   uploadProfilePicture,
+  getReferUser,
 };

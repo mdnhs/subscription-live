@@ -43,7 +43,12 @@ const ProfileDropdown = () => {
   const router = useRouter();
   const { fetchPublic } = useFetch();
   const { data: session, status } = useSession();
-  const { session: userSession, setSession, clearSession } = useSessionStore();
+  const {
+    session: userSession,
+    setSession,
+    setCurrentUser,
+    clearSession,
+  } = useSessionStore();
   const [userData, setUserData] = useState<UserType>();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -89,6 +94,7 @@ const ProfileDropdown = () => {
         }
 
         setUserData(response?.data);
+        setCurrentUser(response?.data);
       } catch (error) {
         console.error("User get error:", error);
       } finally {
@@ -98,7 +104,15 @@ const ProfileDropdown = () => {
 
     // Fetch user data
     fetchUserData();
-  }, [status, session, setSession, fetchPublic, userData, isLoading]);
+  }, [
+    status,
+    session,
+    setSession,
+    setCurrentUser,
+    fetchPublic,
+    userData,
+    isLoading,
+  ]);
 
   // Handle unauthenticated state
   useEffect(() => {
@@ -129,9 +143,7 @@ const ProfileDropdown = () => {
                 <AvatarFallback>UE</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="mt-2"
-            >
+            <DropdownMenuContent className="mt-2">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {userData?.isAdmin && (

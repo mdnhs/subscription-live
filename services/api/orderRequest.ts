@@ -8,7 +8,6 @@ const getOrders: any = (email: string) => {
   };
 };
 
-
 const createOrder: any = (payload: any) => {
   return {
     method: "POST",
@@ -25,4 +24,11 @@ const updateOrder: any = (payload: any, orderId: string) => {
   };
 };
 
-export { getOrders, createOrder, updateOrder };
+const getUserOrders: any = (email: string) => {
+  return {
+    method: "GET",
+    path: `/api/orders?filters[email][$eq]=${email}`,
+  };
+};
+
+export { getOrders, createOrder, updateOrder, getUserOrders };

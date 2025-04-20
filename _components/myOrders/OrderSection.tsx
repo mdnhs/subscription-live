@@ -21,6 +21,7 @@ import OrderCard from "./OrderCard";
 import Link from "next/link";
 import { updateTool } from "@/services/api/toolRequest";
 import useFetch from "@/services/fetch/csrFecth";
+import BuyButtonContainer from "../productDetails/BuyButtonContainer";
 
 type SortOption =
   | "newest"
@@ -42,7 +43,9 @@ const OrderSection = (orders: OrderResponse) => {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [processedExpiredIds, setProcessedExpiredIds] = useState<Set<string>>(new Set());
+  const [processedExpiredIds, setProcessedExpiredIds] = useState<Set<string>>(
+    new Set()
+  );
 
   // Extract all categories from orders
   const extractCategories = useCallback(() => {
@@ -66,84 +69,95 @@ const OrderSection = (orders: OrderResponse) => {
   const availableCategories = extractCategories();
 
   // Handle sorting of orders
-  const sortOrders = useCallback((orderList: any[]): any[] => {
-    return [...orderList].sort((a, b) => {
-      switch (sortBy) {
-        case "newest":
-          return (
-            new Date(b.createdAt || 0).getTime() -
-            new Date(a.createdAt || 0).getTime()
-          );
-        case "oldest":
-          return (
-            new Date(a.createdAt || 0).getTime() -
-            new Date(b.createdAt || 0).getTime()
-          );
-        case "price-high":
-          return (b.price || 0) - (a.price || 0);
-        case "price-low":
-          return (a.price || 0) - (b.price || 0);
-        case "name-az":
-          return (a.name || "").localeCompare(b.name || "");
-        case "name-za":
-          return (b.name || "").localeCompare(a.name || "");
-        default:
-          return 0;
-      }
-    });
-  }, [sortBy]);
+  const sortOrders = useCallback(
+    (orderList: any[]): any[] => {
+      return [...orderList].sort((a, b) => {
+        switch (sortBy) {
+          case "newest":
+            return (
+              new Date(b.createdAt || 0).getTime() -
+              new Date(a.createdAt || 0).getTime()
+            );
+          case "oldest":
+            return (
+              new Date(a.createdAt || 0).getTime() -
+              new Date(b.createdAt || 0).getTime()
+            );
+          case "price-high":
+            return (b.price || 0) - (a.price || 0);
+          case "price-low":
+            return (a.price || 0) - (b.price || 0);
+          case "name-az":
+            return (a.name || "").localeCompare(b.name || "");
+          case "name-za":
+            return (b.name || "").localeCompare(a.name || "");
+          default:
+            return 0;
+        }
+      });
+    },
+    [sortBy]
+  );
 
   // Filter orders by search query and categories
-  const filterOrders = useCallback((orderList: any[]) => {
-    return orderList.filter((order) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        (order.name &&
-          order.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (order.description &&
-          order.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filterOrders = useCallback(
+    (orderList: any[]) => {
+      return orderList.filter((order) => {
+        const matchesSearch =
+          searchQuery === "" ||
+          (order.name &&
+            order.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (order.description &&
+            order.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()));
 
-      const matchesCategory =
-        selectedCategories.length === 0 ||
-        (order.category && selectedCategories.includes(order.category));
+        const matchesCategory =
+          selectedCategories.length === 0 ||
+          (order.category && selectedCategories.includes(order.category));
 
-      return matchesSearch && matchesCategory;
-    });
-  }, [searchQuery, selectedCategories]);
+        return matchesSearch && matchesCategory;
+      });
+    },
+    [searchQuery, selectedCategories]
+  );
 
   // Handle expired order processing - separated from main useEffect
-  const processExpiredOrder = useCallback(async (product: ToolsResponse) => {
-    if (!product.documentId || processedExpiredIds.has(product.documentId)) {
-      return;
-    }
-
-    try {
-      // Only decrement if totalOrder is greater than 0
-      if ((product?.totalOrder || 0) > 0) {
-        const payload = {
-          data: { totalOrder: (product?.totalOrder || 0) - 1 },
-        };
-        const request = updateTool(product.documentId, payload);
-        await fetchPublic(request);
-        
-        // Mark this item as processed
-        setProcessedExpiredIds(prev => {
-          const updated = new Set(prev);
-          if (product.documentId) {
-            updated.add(product.documentId);
-          }
-          return updated;
-        });
+  const processExpiredOrder = useCallback(
+    async (product: ToolsResponse) => {
+      if (!product.documentId || processedExpiredIds.has(product.documentId)) {
+        return;
       }
-    } catch (error) {
-      console.error("Failed to update expired tool totalOrder:", error);
-    }
-  }, [fetchPublic, processedExpiredIds]);
+
+      try {
+        // Only decrement if totalOrder is greater than 0
+        if ((product?.totalOrder || 0) > 0) {
+          const payload = {
+            data: { totalOrder: (product?.totalOrder || 0) - 1 },
+          };
+          const request = updateTool(product.documentId, payload);
+          await fetchPublic(request);
+
+          // Mark this item as processed
+          setProcessedExpiredIds((prev) => {
+            const updated = new Set(prev);
+            if (product.documentId) {
+              updated.add(product.documentId);
+            }
+            return updated;
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update expired tool totalOrder:", error);
+      }
+    },
+    [fetchPublic, processedExpiredIds]
+  );
 
   // Process orders when data changes
   useEffect(() => {
     if (!orders?.orders) return;
-    
+
     const currentDate = new Date();
     const active: any[] = [];
     const archived: any[] = [];
@@ -152,12 +166,12 @@ const OrderSection = (orders: OrderResponse) => {
     orders.orders.forEach((order) => {
       if (!order.isPaid && order.tools) {
         // Handle pending orders
-        order.tools.forEach((product: ToolsResponse) => {
-          pending.push({
-            ...product,
-            orderId: order.id || Math.random().toString(36).substring(2), // Add order ID for uniqueness
-            createdAt: order.createdAt || new Date().toISOString(),
-          });
+        // Instead of pushing individual products, push the entire order with its products
+        pending.push({
+          ...order,
+          orderId: order.id || Math.random().toString(36).substring(2),
+          createdAt: order.createdAt || new Date().toISOString(),
+          products: order.products, // Include the full products array
         });
       } else if (order.isPaid && order.tools) {
         // Check if the order is expired
@@ -167,13 +181,12 @@ const OrderSection = (orders: OrderResponse) => {
         order.tools.forEach((product: ToolsResponse) => {
           const orderItem = {
             ...product,
-            orderId: order.id || Math.random().toString(36).substring(2), // Add order ID for uniqueness
+            orderId: order.id || Math.random().toString(36).substring(2),
             expireDate: order.expireDate,
             createdAt: order.createdAt || new Date().toISOString(),
           };
 
           if (isExpired) {
-            // Process expired item to decrement totalOrder
             processExpiredOrder(product);
             archived.push(orderItem);
           } else {
@@ -215,8 +228,8 @@ const OrderSection = (orders: OrderResponse) => {
   // Generate a truly unique key for each order item
   const generateUniqueKey = (prefix: string, item: any, index: number) => {
     // Use a combination of prefix, documentId/orderId, and index to ensure uniqueness
-    const itemId = item.documentId || item.id || '';
-    const orderOrItemId = item.orderId || '';
+    const itemId = item.documentId || item.id || "";
+    const orderOrItemId = item.orderId || "";
     return `${prefix}-${itemId}-${orderOrItemId}-${index}`;
   };
 
@@ -294,8 +307,12 @@ const OrderSection = (orders: OrderResponse) => {
                   <SelectContent>
                     <SelectItem value="newest">Newest First</SelectItem>
                     <SelectItem value="oldest">Oldest First</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">
+                      Price: High to Low
+                    </SelectItem>
+                    <SelectItem value="price-low">
+                      Price: Low to High
+                    </SelectItem>
                     <SelectItem value="name-az">Name: A to Z</SelectItem>
                     <SelectItem value="name-za">Name: Z to A</SelectItem>
                   </SelectContent>
@@ -352,7 +369,7 @@ const OrderSection = (orders: OrderResponse) => {
                     {filteredActive.map((product, index) => (
                       <OrderCard
                         {...product}
-                        key={generateUniqueKey('active', product, index)}
+                        key={generateUniqueKey("active", product, index)}
                         expireDate={product.expireDate}
                         isActive
                       />
@@ -362,7 +379,9 @@ const OrderSection = (orders: OrderResponse) => {
               ) : activeOrders.length > 0 ? (
                 <Card className="p-8 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">No matching orders</h3>
+                    <h3 className="text-lg font-semibold">
+                      No matching orders
+                    </h3>
                     <p className="text-sm text-muted-foreground mt-2">
                       Try adjusting your search or filters
                     </p>
@@ -383,7 +402,7 @@ const OrderSection = (orders: OrderResponse) => {
                     {filteredArchived.map((product, index) => (
                       <OrderCard
                         {...product}
-                        key={generateUniqueKey('archived', product, index)}
+                        key={generateUniqueKey("archived", product, index)}
                         expireDate={product.expireDate}
                       />
                     ))}
@@ -392,7 +411,9 @@ const OrderSection = (orders: OrderResponse) => {
               ) : archivedOrders.length > 0 ? (
                 <Card className="p-8 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">No matching archived orders</h3>
+                    <h3 className="text-lg font-semibold">
+                      No matching archived orders
+                    </h3>
                     <p className="text-sm text-muted-foreground mt-2">
                       Try adjusting your search or filters
                     </p>
@@ -405,24 +426,42 @@ const OrderSection = (orders: OrderResponse) => {
                 <EmptyOrderState type="archived" />
               )}
             </TabsContent>
-            
+
             <TabsContent value="pending">
               {filteredPending.length > 0 ? (
                 <ScrollArea className="h-fit">
                   <div className="space-y-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {filteredPending.map((product, index) => (
-                      <OrderCard
-                        {...product}
-                        key={generateUniqueKey('pending', product, index)}
-                        expireDate={product.expireDate}
-                      />
-                    ))}
+                    {filteredPending.map((order, index) => {
+                      // console.log(order.products,"++");
+                      return (
+                        <div key={generateUniqueKey("pending", order, index)}>
+                          {/* Render OrderCard for each product in the order */}
+                          {order.products.map(
+                            (product: ToolsResponse, productIndex: number) => (
+                              <OrderCard
+                                key={generateUniqueKey(
+                                  `pending-product-${order.orderId}`,
+                                  product,
+                                  productIndex
+                                )}
+                                {...product}
+                                expireDate={order.expireDate}
+                              />
+                            )
+                          )}
+                          {/* Pass the entire products array to BuyButtonContainer */}
+                          <BuyButtonContainer product={order.products[0]} />
+                        </div>
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               ) : pendingOrders.length > 0 ? (
                 <Card className="p-8 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">No matching pending orders</h3>
+                    <h3 className="text-lg font-semibold">
+                      No matching pending orders
+                    </h3>
                     <p className="text-sm text-muted-foreground mt-2">
                       Try adjusting your search or filters
                     </p>
