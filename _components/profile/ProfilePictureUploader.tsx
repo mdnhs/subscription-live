@@ -94,7 +94,6 @@ const ProfilePictureUploader = ({
       const croppedImageData = await getCroppedImg(
         previewImage,
         croppedAreaPixels,
-        rotation
       );
 
       setCroppedImage(croppedImageData.url);
