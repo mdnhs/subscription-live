@@ -1,5 +1,5 @@
 "use client";
-import useCartStore from "@/_store/CartStore";
+import { useCartStore } from "@/_store/CartStore";
 import { Product } from "@/_types/product";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";

@@ -111,7 +111,6 @@ const ReviewSection = ({ product }: ReviewSectionProps) => {
         },
       };
 
-      console.log("Sending payload:", payload);
       const req = setProductById(payload, product.documentId);
       const response = await fetchPublic(req);
 

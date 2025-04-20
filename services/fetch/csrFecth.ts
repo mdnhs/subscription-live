@@ -66,7 +66,7 @@ const useFetch = () => {
           data: json,
           message: json?.message,
         };
-        console.log(res);
+        // console.log(res);
         if (!response.ok) throw res;
 
         return res;

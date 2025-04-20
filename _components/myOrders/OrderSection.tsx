@@ -16,9 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import OrderCard from "./OrderCard";
 import Link from "next/link";
+import { updateTool } from "@/services/api/toolRequest";
+import useFetch from "@/services/fetch/csrFecth";
 
 type SortOption =
   | "newest"
@@ -29,6 +31,7 @@ type SortOption =
   | "name-za";
 
 const OrderSection = (orders: OrderResponse) => {
+  const { fetchPublic } = useFetch();
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
@@ -39,12 +42,13 @@ const OrderSection = (orders: OrderResponse) => {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [processedExpiredIds, setProcessedExpiredIds] = useState<Set<string>>(new Set());
 
   // Extract all categories from orders
-  const extractCategories = () => {
+  const extractCategories = useCallback(() => {
     const categories = new Set<string>();
 
-    if (orders && orders.orders) {
+    if (orders?.orders) {
       orders.orders.forEach((order) => {
         if (order.isPaid && order.tools) {
           order.tools.forEach((product: ToolsResponse) => {
@@ -57,12 +61,12 @@ const OrderSection = (orders: OrderResponse) => {
     }
 
     return Array.from(categories);
-  };
+  }, [orders]);
 
   const availableCategories = extractCategories();
 
   // Handle sorting of orders
-  const sortOrders = (orderList: any[]): any[] => {
+  const sortOrders = useCallback((orderList: any[]): any[] => {
     return [...orderList].sort((a, b) => {
       switch (sortBy) {
         case "newest":
@@ -87,10 +91,10 @@ const OrderSection = (orders: OrderResponse) => {
           return 0;
       }
     });
-  };
+  }, [sortBy]);
 
   // Filter orders by search query and categories
-  const filterOrders = (orderList: any[]) => {
+  const filterOrders = useCallback((orderList: any[]) => {
     return orderList.filter((order) => {
       const matchesSearch =
         searchQuery === "" ||
@@ -105,61 +109,91 @@ const OrderSection = (orders: OrderResponse) => {
 
       return matchesSearch && matchesCategory;
     });
-  };
+  }, [searchQuery, selectedCategories]);
+
+  // Handle expired order processing - separated from main useEffect
+  const processExpiredOrder = useCallback(async (product: ToolsResponse) => {
+    if (!product.documentId || processedExpiredIds.has(product.documentId)) {
+      return;
+    }
+
+    try {
+      // Only decrement if totalOrder is greater than 0
+      if ((product?.totalOrder || 0) > 0) {
+        const payload = {
+          data: { totalOrder: (product?.totalOrder || 0) - 1 },
+        };
+        const request = updateTool(product.documentId, payload);
+        await fetchPublic(request);
+        
+        // Mark this item as processed
+        setProcessedExpiredIds(prev => {
+          const updated = new Set(prev);
+          if (product.documentId) {
+            updated.add(product.documentId);
+          }
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update expired tool totalOrder:", error);
+    }
+  }, [fetchPublic, processedExpiredIds]);
 
   // Process orders when data changes
   useEffect(() => {
-    if (orders && orders.orders) {
-      const currentDate = new Date();
+    if (!orders?.orders) return;
+    
+    const currentDate = new Date();
+    const active: any[] = [];
+    const archived: any[] = [];
+    const pending: any[] = [];
 
-      const active: any[] = [];
-      const archived: any[] = [];
-      const pending: any[] = [];
-
-      orders.orders.forEach((order) => {
-        if (order.isPaid && order.tools) {
-          // Check if the order is expired
-          const expireDate = new Date(order.expireDate ?? 0);
-          const isExpired = expireDate < currentDate;
-
-          order.tools.forEach((product: ToolsResponse) => {
-            const orderItem = {
-              ...product,
-              expireDate: order.expireDate,
-              createdAt: order.createdAt || new Date().toISOString(),
-            };
-
-            if (isExpired) {
-              archived.push(orderItem);
-            } else {
-              active.push(orderItem);
-            }
+    orders.orders.forEach((order) => {
+      if (!order.isPaid && order.tools) {
+        // Handle pending orders
+        order.tools.forEach((product: ToolsResponse) => {
+          pending.push({
+            ...product,
+            orderId: order.id || Math.random().toString(36).substring(2), // Add order ID for uniqueness
+            createdAt: order.createdAt || new Date().toISOString(),
           });
-        }
-        if (!order.isPaid && order.tools) {
-          order.tools.forEach((product: ToolsResponse) => {
-            const orderItem = {
-              ...product,
-            };
+        });
+      } else if (order.isPaid && order.tools) {
+        // Check if the order is expired
+        const expireDate = new Date(order.expireDate ?? 0);
+        const isExpired = expireDate < currentDate;
 
-            pending.push(orderItem);
-          });
-        }
-      });
+        order.tools.forEach((product: ToolsResponse) => {
+          const orderItem = {
+            ...product,
+            orderId: order.id || Math.random().toString(36).substring(2), // Add order ID for uniqueness
+            expireDate: order.expireDate,
+            createdAt: order.createdAt || new Date().toISOString(),
+          };
 
-      setPendingOrders(pending);
-      setActiveOrders(active);
-      setArchivedOrders(archived);
-    }
-  }, [orders]);
+          if (isExpired) {
+            // Process expired item to decrement totalOrder
+            processExpiredOrder(product);
+            archived.push(orderItem);
+          } else {
+            active.push(orderItem);
+          }
+        });
+      }
+    });
+
+    setPendingOrders(pending);
+    setActiveOrders(active);
+    setArchivedOrders(archived);
+  }, [orders, processExpiredOrder]);
 
   // Apply filters and sorting when dependencies change
   useEffect(() => {
     setFilteredActive(sortOrders(filterOrders(activeOrders)));
     setFilteredArchived(sortOrders(filterOrders(archivedOrders)));
     setFilteredPending(sortOrders(filterOrders(pendingOrders)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeOrders, archivedOrders, searchQuery, sortBy, selectedCategories]);
+  }, [activeOrders, archivedOrders, pendingOrders, filterOrders, sortOrders]);
 
   // Toggle category selection
   const toggleCategory = (category: string) => {
@@ -178,8 +212,16 @@ const OrderSection = (orders: OrderResponse) => {
     setShowFilters(false);
   };
 
+  // Generate a truly unique key for each order item
+  const generateUniqueKey = (prefix: string, item: any, index: number) => {
+    // Use a combination of prefix, documentId/orderId, and index to ensure uniqueness
+    const itemId = item.documentId || item.id || '';
+    const orderOrItemId = item.orderId || '';
+    return `${prefix}-${itemId}-${orderOrItemId}-${index}`;
+  };
+
   return (
-    <Card className=" shadow-md">
+    <Card className="shadow-md">
       <CardContent className="px-6">
         {orders ? (
           <Tabs defaultValue="active" className="w-full">
@@ -187,7 +229,10 @@ const OrderSection = (orders: OrderResponse) => {
               <TabsTrigger value="active">
                 Active Orders
                 {activeOrders.length > 0 && (
-                  <Badge variant="secondary" className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]">
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]"
+                  >
                     {activeOrders.length}
                   </Badge>
                 )}
@@ -195,7 +240,10 @@ const OrderSection = (orders: OrderResponse) => {
               <TabsTrigger value="archived">
                 Archived Orders
                 {archivedOrders.length > 0 && (
-                  <Badge variant="secondary" className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]">
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]"
+                  >
                     {archivedOrders.length}
                   </Badge>
                 )}
@@ -203,7 +251,10 @@ const OrderSection = (orders: OrderResponse) => {
               <TabsTrigger value="pending">
                 Payment Pending
                 {pendingOrders.length > 0 && (
-                  <Badge variant="secondary" className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]">
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]"
+                  >
                     {pendingOrders.length}
                   </Badge>
                 )}
@@ -243,12 +294,8 @@ const OrderSection = (orders: OrderResponse) => {
                   <SelectContent>
                     <SelectItem value="newest">Newest First</SelectItem>
                     <SelectItem value="oldest">Oldest First</SelectItem>
-                    <SelectItem value="price-high">
-                      Price: High to Low
-                    </SelectItem>
-                    <SelectItem value="price-low">
-                      Price: Low to High
-                    </SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
                     <SelectItem value="name-az">Name: A to Z</SelectItem>
                     <SelectItem value="name-za">Name: Z to A</SelectItem>
                   </SelectContent>
@@ -305,7 +352,7 @@ const OrderSection = (orders: OrderResponse) => {
                     {filteredActive.map((product, index) => (
                       <OrderCard
                         {...product}
-                        key={`active-${index}`}
+                        key={generateUniqueKey('active', product, index)}
                         expireDate={product.expireDate}
                         isActive
                       />
@@ -315,9 +362,7 @@ const OrderSection = (orders: OrderResponse) => {
               ) : activeOrders.length > 0 ? (
                 <Card className="p-8 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">
-                      No matching orders
-                    </h3>
+                    <h3 className="text-lg font-semibold">No matching orders</h3>
                     <p className="text-sm text-muted-foreground mt-2">
                       Try adjusting your search or filters
                     </p>
@@ -338,7 +383,7 @@ const OrderSection = (orders: OrderResponse) => {
                     {filteredArchived.map((product, index) => (
                       <OrderCard
                         {...product}
-                        key={`archived-${index}`}
+                        key={generateUniqueKey('archived', product, index)}
                         expireDate={product.expireDate}
                       />
                     ))}
@@ -347,9 +392,7 @@ const OrderSection = (orders: OrderResponse) => {
               ) : archivedOrders.length > 0 ? (
                 <Card className="p-8 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">
-                      No matching archived orders
-                    </h3>
+                    <h3 className="text-lg font-semibold">No matching archived orders</h3>
                     <p className="text-sm text-muted-foreground mt-2">
                       Try adjusting your search or filters
                     </p>
@@ -362,14 +405,15 @@ const OrderSection = (orders: OrderResponse) => {
                 <EmptyOrderState type="archived" />
               )}
             </TabsContent>
+            
             <TabsContent value="pending">
-              {pendingOrders.length > 0 ? (
+              {filteredPending.length > 0 ? (
                 <ScrollArea className="h-fit">
                   <div className="space-y-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {filteredPending.map((product, index) => (
                       <OrderCard
                         {...product}
-                        key={`archived-${index}`}
+                        key={generateUniqueKey('pending', product, index)}
                         expireDate={product.expireDate}
                       />
                     ))}
@@ -378,9 +422,7 @@ const OrderSection = (orders: OrderResponse) => {
               ) : pendingOrders.length > 0 ? (
                 <Card className="p-8 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">
-                      No matching archived orders
-                    </h3>
+                    <h3 className="text-lg font-semibold">No matching pending orders</h3>
                     <p className="text-sm text-muted-foreground mt-2">
                       Try adjusting your search or filters
                     </p>
@@ -390,7 +432,7 @@ const OrderSection = (orders: OrderResponse) => {
                   </div>
                 </Card>
               ) : (
-                <EmptyOrderState type="archived" />
+                <EmptyOrderState type="pending" />
               )}
             </TabsContent>
           </Tabs>
@@ -403,7 +445,7 @@ const OrderSection = (orders: OrderResponse) => {
 };
 
 interface EmptyOrderStateProps {
-  type: "active" | "archived" | "all";
+  type: "active" | "archived" | "all" | "pending";
 }
 
 const EmptyOrderState = ({ type }: EmptyOrderStateProps) => {
@@ -415,6 +457,10 @@ const EmptyOrderState = ({ type }: EmptyOrderStateProps) => {
     archived: {
       title: "No archived orders",
       description: "You don't have any expired product orders.",
+    },
+    pending: {
+      title: "No pending orders",
+      description: "You don't have any orders awaiting payment.",
     },
     all: {
       title: "No orders yet",
@@ -429,8 +475,8 @@ const EmptyOrderState = ({ type }: EmptyOrderStateProps) => {
         <p className="text-sm text-muted-foreground mt-2">
           {messages[type].description}
         </p>
-        <Link href={"/market"}>
-        <Button className="mt-4">Browse Products</Button>
+        <Link href="/market">
+          <Button className="mt-4">Browse Products</Button>
         </Link>
       </div>
     </Card>

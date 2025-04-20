@@ -15,6 +15,10 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
     selectedPayment,
     setSelectedPayment,
     showSupportMessage,
+    appliedCoupons,
+    couponError,
+    applyCoupon,
+    removeCoupon,
   } = useCheckout(tools);
 
   if (loading) return <Loader />;
@@ -41,7 +45,13 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
             </div>
           </div>
           <div className="relative col-span-full flex flex-col py-6 pl-8 pr-4 sm:py-12 lg:col-span-4 lg:py-24 border border-gray-200/15 rounded-2xl">
-            <OrderSummary total={total} />
+            <OrderSummary
+              total={total}
+              applyCoupon={applyCoupon}
+              removeCoupon={removeCoupon}
+              appliedCoupons={appliedCoupons}
+              couponError={couponError}
+            />
             <SupportInfo />
           </div>
         </div>

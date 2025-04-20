@@ -1,5 +1,6 @@
 "use client";
 import { setFormattedExpireDate } from "@/function/dateFormatter";
+import { updateCoupon } from "@/services/api/couponRequest";
 import { updateOrder } from "@/services/api/orderRequest";
 import { updateTool } from "@/services/api/toolRequest";
 import useFetch from "@/services/fetch/csrFecth";
@@ -10,11 +11,17 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { useCouponStore } from "@/services/store/useCouponStore";
 
 const PageContent = () => {
   const searchParams = useSearchParams();
   const paymentID = searchParams.get("paymentID");
-  const { order } = useOrderStore();
+  const { order, clearOrder } = useOrderStore();
+  const { appliedCoupons, clearCoupons } = useCouponStore(); // Use store instead of localStorage
+  const [couponUpdated, setCouponUpdated] = useState(false);
+  const { data: session, status } = useSession();
+
   const { fetchPublic } = useFetch();
   const orderId = order?.documentId;
   const createDate = order?.createdAt;
@@ -24,19 +31,19 @@ const PageContent = () => {
     toolTerm ?? 0
   );
   const [isHydrated, setIsHydrated] = useState(false);
-  const { currentTool } = useGrantedToolsStore(); // Use the granted tools store
+  const { currentTool, clearGrantedTools } = useGrantedToolsStore();
 
-  console.log(currentTool);
-  // Detect when store is hydrated
+  // Handle client-side hydration
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
+  // Process order update
   useEffect(() => {
-    // Wait for hydration, orderId, and paymentID
     if (!isHydrated || !orderId || !paymentID) {
-      return; // Silently wait until both are available
+      return;
     }
+
     const processOrder = async () => {
       const payload = {
         data: {
@@ -49,17 +56,21 @@ const PageContent = () => {
       try {
         const req = updateOrder({ data: payload.data }, orderId);
         const response = await fetchPublic(req);
-        const _payload = {
-          data: { totalOrder: (currentTool?.totalOrder || 0) + 1 },
-        };
-        const _req = updateTool(currentTool?.documentId, _payload);
-        await fetchPublic(_req);
+
+        if (currentTool?.documentId) {
+          const _payload = {
+            data: { totalOrder: (currentTool?.totalOrder || 0) + 1 },
+          };
+          const _req = updateTool(currentTool.documentId, _payload);
+          await fetchPublic(_req);
+        }
+
         if (!response.success) {
           throw new Error(response.message || "Failed to update order.");
         }
 
-        const { data } = response;
-        return data;
+        toast.success("Order updated successfully!");
+        return response.data;
       } catch (error) {
         console.error("Order update error:", error);
         toast.error(
@@ -72,6 +83,8 @@ const PageContent = () => {
     };
 
     processOrder();
+    clearGrantedTools();
+    clearOrder();
   }, [
     fetchPublic,
     orderId,
@@ -80,6 +93,82 @@ const PageContent = () => {
     expireDate,
     currentTool?.documentId,
     currentTool?.totalOrder,
+    clearGrantedTools,
+    clearOrder,
+  ]);
+
+  // Handle coupon update
+  useEffect(() => {
+    if (
+      couponUpdated ||
+      !isHydrated ||
+      appliedCoupons.length === 0 ||
+      !appliedCoupons[0]?.documentId
+    ) {
+      return;
+    }
+
+    if (status !== "authenticated" || !session?.user?.email) {
+      console.warn("User not authenticated or email not available");
+      return;
+    }
+
+    const updateCouponDetails = async () => {
+      try {
+        const couponData = appliedCoupons[0]; // Use first coupon from store
+        const currentUserEmail = session.user.email;
+
+        const updatedUsedCount = (couponData.usedCount || 0) + 1;
+        const updatedUserUsage = { ...(couponData.userUsage || {}) };
+
+        if (currentUserEmail && currentUserEmail in updatedUserUsage) {
+          updatedUserUsage[currentUserEmail] =
+            (updatedUserUsage[currentUserEmail] || 0) + 1;
+        } else if (currentUserEmail) {
+          updatedUserUsage[currentUserEmail] = 1;
+        }
+
+        const payload = {
+          data: {
+            usedCount: updatedUsedCount,
+            userUsage: updatedUserUsage,
+          },
+        };
+
+        console.log(
+          "Updating coupon:",
+          couponData.documentId,
+          "with payload:",
+          payload
+        );
+
+        const req = updateCoupon(couponData.documentId, payload);
+        const response = await fetchPublic(req);
+
+        if (!response.success) {
+          throw new Error(response.message || "Failed to update coupon");
+        }
+
+        console.log("Coupon updated successfully");
+        toast.success("Coupon updated successfully!");
+        setCouponUpdated(true);
+        // Do NOT call clearCoupons() to persist coupon data
+      } catch (error) {
+        console.error("Coupon update error:", error);
+        toast.error("Failed to update coupon usage");
+      }
+    };
+
+    updateCouponDetails();
+    clearCoupons();
+  }, [
+    appliedCoupons,
+    fetchPublic,
+    isHydrated,
+    status,
+    session,
+    couponUpdated,
+    clearCoupons,
   ]);
 
   return (
@@ -89,7 +178,7 @@ const PageContent = () => {
         <div className="flex flex-col gap-4 items-center">
           <h2 className="text-[24px]">Payment Successful!</h2>
           <h2 className="text-sm">Transaction ID: {paymentID ?? "N/A"}</h2>
-          <h2 className="text-sm">Order ID: {order?.documentId ?? "N/A"}</h2>
+
           <h2 className="text-[17px] text-center text-gray-200">
             We sent an email with your order confirmation along with Digital
             Content

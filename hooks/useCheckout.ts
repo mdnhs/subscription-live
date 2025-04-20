@@ -1,5 +1,4 @@
 "use client";
-import useCartStore from "@/_store/CartStore";
 import { ToolsResponse } from "@/_types/product";
 import { getDistributionItems } from "@/services/api/distributionRequest";
 import { createOrder } from "@/services/api/orderRequest";
@@ -11,6 +10,8 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import useCartCalculations from "./useCartCalculations";
+import { useCartStore } from "@/_store/CartStore";
+import { useCouponStore } from "@/services/store/useCouponStore";
 
 const useCheckout = (tools: ToolsResponse[]) => {
   const { data: session } = useSession();
@@ -20,6 +21,7 @@ const useCheckout = (tools: ToolsResponse[]) => {
   const searchParams = useSearchParams();
   const fetchedRef = useRef(false);
   const { setCurrentTool } = useGrantedToolsStore();
+  const { setCoupons } = useCouponStore();
 
   const [selectedPayment, setSelectedPayment] = useState<string>("bkash");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,14 +40,16 @@ const useCheckout = (tools: ToolsResponse[]) => {
     showSupportMessage: cartShowSupportMessage,
     calculateTotal,
     updateToolSelection,
+    appliedCoupons,
+    couponError,
+    applyCoupon,
+    removeCoupon,
   } = useCartCalculations(cartItems, tools, distributions);
 
-  // Sync local showSupportMessage with cartShowSupportMessage
   useEffect(() => {
     setShowSupportMessage(cartShowSupportMessage);
   }, [cartShowSupportMessage]);
 
-  // Check for payment cancellation or failure
   useEffect(() => {
     const message = searchParams.get("message");
     if (message === "cancel" || message === "failure") {
@@ -53,12 +57,11 @@ const useCheckout = (tools: ToolsResponse[]) => {
     }
   }, [searchParams]);
 
-  // Fetch distributions with useRef to ensure it runs exactly once
   useEffect(() => {
     const fetchDistributions = async () => {
       if (session?.user?.email && !fetchedRef.current) {
         try {
-          fetchedRef.current = true; // Set this before the API call to prevent race conditions
+          fetchedRef.current = true;
           const req = getDistributionItems();
           const response = await fetchPublic(req);
           if (!response.success) {
@@ -68,19 +71,16 @@ const useCheckout = (tools: ToolsResponse[]) => {
         } catch (error) {
           console.error("Error fetching distributions:", error);
           toast.error("Failed to fetch distribution data.");
-          // Don't reset fetchedRef on error to prevent retries
         }
       }
     };
     fetchDistributions();
   }, [session?.user?.email, fetchPublic]);
 
-  // Calculate total
   useEffect(() => {
     calculateTotal();
   }, [cartItems, loading, calculateTotal]);
 
-  // Update tool selection
   useEffect(() => {
     updateToolSelection();
   }, [cartItems, tools, distributions, updateToolSelection]);
@@ -100,6 +100,18 @@ const useCheckout = (tools: ToolsResponse[]) => {
         category: productCategory,
         month: productMonth,
         tools: grantedTool,
+        // coupons: appliedCoupons.map((coupon) => ({
+        //   code: coupon.code,
+        //   discount: coupon.isPercentage
+        //     ? (cartItems.reduce(
+        //         (sum, item) => sum + (Number(item?.price) || 0),
+        //         0
+        //       ) *
+        //         coupon.discount) /
+        //       100
+        //     : coupon.discount,
+        //   isPercentage: coupon.isPercentage,
+        // })),
       },
     };
 
@@ -110,6 +122,18 @@ const useCheckout = (tools: ToolsResponse[]) => {
         throw new Error("No data returned from order creation.");
       }
       setOrder(response?.data?.data);
+
+      // Update coupon usage (mock for now, replace with API call)
+      for (const coupon of appliedCoupons) {
+        // Example API call to update usedCount and userUsage
+        // await fetchPublic({
+        //   url: `/api/coupons/${coupon.code}/use`,
+        //   method: "POST",
+        //   body: { userEmail: session.user.email },
+        // });
+        console.log(`Incremented usage for coupon ${coupon.code}`);
+      }
+
       return response?.data?.data;
     } catch (error) {
       console.error("Checkout error:", error);
@@ -155,6 +179,7 @@ const useCheckout = (tools: ToolsResponse[]) => {
       const sessionData = await response.json();
       if (sessionData.bkashURL) {
         setCurrentTool(grantedToolDetails);
+        setCoupons(appliedCoupons);
         clearCart();
         window.location.href = sessionData.bkashURL;
       } else {
@@ -176,6 +201,10 @@ const useCheckout = (tools: ToolsResponse[]) => {
     selectedPayment,
     setSelectedPayment,
     showSupportMessage,
+    appliedCoupons,
+    couponError,
+    applyCoupon,
+    removeCoupon,
   };
 };
 

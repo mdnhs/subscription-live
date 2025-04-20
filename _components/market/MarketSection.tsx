@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import CommonProductCard from "../products/CommonProductCard";
+import { getExpireDays } from "@/function/dateFormatter";
 
 type SortOption =
   | "newest"
@@ -436,7 +437,7 @@ const FilterContent = ({
     <AccordionItem value="month">
       <AccordionTrigger>Duration</AccordionTrigger>
       <AccordionContent className="flex flex-wrap gap-2">
-        {[1, 3, 6, 12].map((month) => (
+        {[0.33, 0.66, 1, 3, 6, 12].map((month) => (
           <Button
             key={month}
             variant={selectedMonth === month ? "default" : "outline"}
@@ -447,7 +448,7 @@ const FilterContent = ({
               )
             }
           >
-            {month} Month{month > 1 ? "s" : ""}
+            {month} Month{month > 1 ? "s" : ""} ({getExpireDays(month)})
           </Button>
         ))}
       </AccordionContent>
