@@ -10,7 +10,7 @@ export interface User {
   gender?: "male" | "female" | "other";
   religion?: "islam" | "hinduism" | "christianity" | "buddhism" | "other";
   isAdmin?: boolean;
-  via:string
+  via?:string
 }
 
 
