@@ -22,13 +22,14 @@ export type OrderResponse = {
   ];
 };
 
-
 export type CartItem = {
   documentId: string;
   title: string;
   price: number;
   category: string;
   month: number;
+  isOffer?: boolean;
+  offerAmount: number;
   banner?: {
     url: string;
   };

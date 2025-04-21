@@ -7,6 +7,8 @@ export type CartItem = {
   price: number;
   category: string;
   month: number;
+  isOffer?: boolean;
+  offerAmount: number;
   banner?: {
     url: string;
   };

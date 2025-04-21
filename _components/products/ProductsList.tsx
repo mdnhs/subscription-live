@@ -36,19 +36,21 @@ const ProductsList = ({ products, type }: Props) => {
         className="w-full select-none"
       >
         <CarouselContent className=" gap-3">
-          {products?.map((product, idx) => (
-            <CarouselItem
-              key={product.id}
-              className={classItem}
-              style={{ zIndex: products.length - idx }}
-            >
-              {type === "week" ? (
-                <WeekProductCard product={product} />
-              ) : (
-                <CommonProductCard product={product} />
-              )}
-            </CarouselItem>
-          ))}
+          {products
+            ?.sort((a, b) => (b.isOffer ? 1 : 0) - (a.isOffer ? 1 : 0))
+            .map((product, idx) => (
+              <CarouselItem
+                key={product.id}
+                className={classItem}
+                style={{ zIndex: products.length - idx }}
+              >
+                {type === "week" ? (
+                  <WeekProductCard product={product} />
+                ) : (
+                  <CommonProductCard product={product} />
+                )}
+              </CarouselItem>
+            ))}
         </CarouselContent>
         <CarouselPrevious className="-left-2" />
         <CarouselNext className="-right-2" />

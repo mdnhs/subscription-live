@@ -5,6 +5,9 @@ export interface Product {
   title: string;
   getAccessData: string;
   targetUrl: string;
+  isOffer: boolean;
+  isCreditOffer: boolean;
+  offerAmount: number;
   description: Array<{
     type: string;
     children: Array<{ type: string; text: string }>;

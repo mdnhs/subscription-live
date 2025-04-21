@@ -6,6 +6,7 @@ import { updateTool } from "@/services/api/toolRequest";
 import { getReferUser, updateUser } from "@/services/api/userRequest";
 import useFetch from "@/services/fetch/csrFecth";
 import { useCouponStore } from "@/services/store/useCouponStore";
+import { useCreditStore } from "@/services/store/useCreditStore";
 import useGrantedToolsStore from "@/services/store/useGrantedToolsStore";
 import useOrderStore from "@/services/store/useOrderStore";
 import useSessionStore from "@/services/store/useSessionStore";
@@ -25,6 +26,8 @@ const ConfirmPayment = () => {
   const { appliedCoupons, clearCoupons } = useCouponStore();
   const { currentUser } = useSessionStore();
   const { currentTool, clearGrantedTools } = useGrantedToolsStore();
+  const { isCredit } = useCreditStore();
+  
 
   // Session
   const { data: session, status } = useSession();
@@ -165,7 +168,26 @@ const ConfirmPayment = () => {
         }
       }
 
-      // Step 5: Update coupon usage
+      // Step 5: Update refCredit if isCredit is true
+      if (isCredit && user?.id && user?.refCredit !== undefined) {
+        const updatedRefCredit = Math.max(0, user.refCredit - 1); // Ensure refCredit doesn't go below 0
+        const userUpdatePayload = {
+          refCredit: updatedRefCredit,
+        };
+
+        const userUpdateReq = updateUser(
+          currentSession.user.jwt,
+          user.id,
+          userUpdatePayload
+        );
+        const userUpdateResponse = await fetchPublic(userUpdateReq);
+
+        if (!userUpdateResponse.success) {
+          throw new Error("Failed to update user refCredit");
+        }
+      }
+
+      // Step 6: Update coupon usage
       const coupons = appliedCouponsRef.current;
       if (coupons.length > 0 && coupons[0]?.documentId) {
         const couponData = coupons[0];
@@ -215,6 +237,7 @@ const ConfirmPayment = () => {
     clearOrder,
     clearCoupons,
     clearGrantedTools,
+    isCredit,
   ]);
 
   // Trigger payment processing once when component is hydrated

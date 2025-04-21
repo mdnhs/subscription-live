@@ -342,9 +342,11 @@ const MarketSection = ({ products }: { products: Product[] }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
-              <CommonProductCard key={product.id} product={product} />
-            ))
+            filteredProducts
+              .sort((a, b) => (b.isOffer ? 1 : 0) - (a.isOffer ? 1 : 0))
+              .map((product) => (
+                <CommonProductCard key={product.id} product={product} />
+              ))
           ) : (
             <div className="col-span-full text-center p-8 bg-muted rounded-lg">
               <h3 className="text-lg font-semibold">No products found</h3>

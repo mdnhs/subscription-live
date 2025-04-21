@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrderResponse } from "@/_types/ordersTypes";
 import { ToolsResponse } from "@/_types/product";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -13,15 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Search, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
-import OrderCard from "./OrderCard";
-import Link from "next/link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { updateTool } from "@/services/api/toolRequest";
 import useFetch from "@/services/fetch/csrFecth";
-import BuyButtonContainer from "../productDetails/BuyButtonContainer";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import OrderCard from "./OrderCard";
 
 type SortOption =
   | "newest"
@@ -35,10 +34,10 @@ const OrderSection = (orders: OrderResponse) => {
   const { fetchPublic } = useFetch();
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [archivedOrders, setArchivedOrders] = useState<any[]>([]);
-  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
+  const [failedOrders, setFailedOrders] = useState<any[]>([]);
   const [filteredActive, setFilteredActive] = useState<any[]>([]);
   const [filteredArchived, setFilteredArchived] = useState<any[]>([]);
-  const [filteredPending, setFilteredPending] = useState<any[]>([]);
+  const [filteredFailed, setFilteredFailed] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
@@ -161,13 +160,13 @@ const OrderSection = (orders: OrderResponse) => {
     const currentDate = new Date();
     const active: any[] = [];
     const archived: any[] = [];
-    const pending: any[] = [];
+    const failed: any[] = [];
 
     orders.orders.forEach((order) => {
       if (!order.isPaid && order.tools) {
-        // Handle pending orders
+        // Handle failed orders
         // Instead of pushing individual products, push the entire order with its products
-        pending.push({
+        failed.push({
           ...order,
           orderId: order.id || Math.random().toString(36).substring(2),
           createdAt: order.createdAt || new Date().toISOString(),
@@ -196,7 +195,7 @@ const OrderSection = (orders: OrderResponse) => {
       }
     });
 
-    setPendingOrders(pending);
+    setFailedOrders(failed);
     setActiveOrders(active);
     setArchivedOrders(archived);
   }, [orders, processExpiredOrder]);
@@ -205,8 +204,8 @@ const OrderSection = (orders: OrderResponse) => {
   useEffect(() => {
     setFilteredActive(sortOrders(filterOrders(activeOrders)));
     setFilteredArchived(sortOrders(filterOrders(archivedOrders)));
-    setFilteredPending(sortOrders(filterOrders(pendingOrders)));
-  }, [activeOrders, archivedOrders, pendingOrders, filterOrders, sortOrders]);
+    setFilteredFailed(sortOrders(filterOrders(failedOrders)));
+  }, [activeOrders, archivedOrders, failedOrders, filterOrders, sortOrders]);
 
   // Toggle category selection
   const toggleCategory = (category: string) => {
@@ -261,14 +260,14 @@ const OrderSection = (orders: OrderResponse) => {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="pending">
-                Payment Pending
-                {pendingOrders.length > 0 && (
+              <TabsTrigger value="failed">
+                Failed Order
+                {failedOrders.length > 0 && (
                   <Badge
                     variant="secondary"
                     className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]"
                   >
-                    {pendingOrders.length}
+                    {failedOrders.length}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -427,20 +426,20 @@ const OrderSection = (orders: OrderResponse) => {
               )}
             </TabsContent>
 
-            <TabsContent value="pending">
-              {filteredPending.length > 0 ? (
+            <TabsContent value="failed">
+              {filteredFailed.length > 0 ? (
                 <ScrollArea className="h-fit">
                   <div className="space-y-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {filteredPending.map((order, index) => {
+                    {filteredFailed.map((order, index) => {
                       // console.log(order.products,"++");
                       return (
-                        <div key={generateUniqueKey("pending", order, index)}>
+                        <div key={generateUniqueKey("failed", order, index)}>
                           {/* Render OrderCard for each product in the order */}
                           {order.products.map(
                             (product: ToolsResponse, productIndex: number) => (
                               <OrderCard
                                 key={generateUniqueKey(
-                                  `pending-product-${order.orderId}`,
+                                  `failed-product-${order.orderId}`,
                                   product,
                                   productIndex
                                 )}
@@ -450,17 +449,17 @@ const OrderSection = (orders: OrderResponse) => {
                             )
                           )}
                           {/* Pass the entire products array to BuyButtonContainer */}
-                          <BuyButtonContainer product={order.products[0]} />
+                          {/* <BuyButtonContainer product={order.products[0]} /> */}
                         </div>
                       );
                     })}
                   </div>
                 </ScrollArea>
-              ) : pendingOrders.length > 0 ? (
+              ) : failedOrders.length > 0 ? (
                 <Card className="p-8 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center justify-center">
                     <h3 className="text-lg font-semibold">
-                      No matching pending orders
+                      No matching failed orders
                     </h3>
                     <p className="text-sm text-muted-foreground mt-2">
                       Try adjusting your search or filters
@@ -471,7 +470,7 @@ const OrderSection = (orders: OrderResponse) => {
                   </div>
                 </Card>
               ) : (
-                <EmptyOrderState type="pending" />
+                <EmptyOrderState type="failed" />
               )}
             </TabsContent>
           </Tabs>
@@ -484,7 +483,7 @@ const OrderSection = (orders: OrderResponse) => {
 };
 
 interface EmptyOrderStateProps {
-  type: "active" | "archived" | "all" | "pending";
+  type: "active" | "archived" | "all" | "failed";
 }
 
 const EmptyOrderState = ({ type }: EmptyOrderStateProps) => {
@@ -497,8 +496,8 @@ const EmptyOrderState = ({ type }: EmptyOrderStateProps) => {
       title: "No archived orders",
       description: "You don't have any expired product orders.",
     },
-    pending: {
-      title: "No pending orders",
+    failed: {
+      title: "No failed orders",
       description: "You don't have any orders awaiting payment.",
     },
     all: {

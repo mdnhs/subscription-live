@@ -2,18 +2,26 @@
 import { useCartStore } from "@/_store/CartStore";
 import { Product } from "@/_types/product";
 import { Button } from "@/components/ui/button";
+import { useCreditStore } from "@/services/store/useCreditStore";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-type Props = { product: Product };
-
-const BuyButtonContainer = ({ product }: Props) => {
+const BuyButtonContainer = ({
+  product,
+  isCredit,
+}: {
+  product: Product;
+  isCredit?: boolean;
+}) => {
+  console.log(isCredit, "++");
   const { status } = useSession();
   const router = useRouter();
   const pathName = usePathname();
   const callbackUrl = encodeURIComponent(pathName);
   const { loading, addToCart, clearCart } = useCartStore();
+  const { setIsCredit } = useCreditStore();
+
   const handleAddToCart = async () => {
     if (status === "unauthenticated") {
       router.push(`/login?callbackUrl=${callbackUrl}`);
@@ -21,6 +29,11 @@ const BuyButtonContainer = ({ product }: Props) => {
     }
 
     try {
+      // Set isCredit value in the store
+      if (isCredit !== undefined) {
+        setIsCredit(isCredit);
+      }
+
       // Clear existing cart items if any
       clearCart();
 
@@ -32,6 +45,8 @@ const BuyButtonContainer = ({ product }: Props) => {
         category: product.category,
         month: product.month,
         banner: product.banner,
+        isOffer: product.isOffer,
+        offerAmount: product.offerAmount,
       });
 
       // Show success notification

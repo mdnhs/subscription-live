@@ -1,6 +1,7 @@
 import { CartItem } from "@/_store/CartStore";
 import { Coupon } from "@/_types/coupon";
 import { ToolsResponse } from "@/_types/product";
+import { getProductPrice } from "@/function/priceFormatter";
 import { getCoupon } from "@/services/api/couponRequest";
 import useFetch from "@/services/fetch/csrFecth";
 import { useSession } from "next-auth/react";
@@ -30,7 +31,6 @@ const useCartCalculations = (
   const [couponError, setCouponError] = useState<string>("");
 
   const cartProduct = useMemo(() => cartItems[0], [cartItems]);
-  console.log(cartProduct,"+++");
   useEffect(() => {
     const debounceProcessCoupon = setTimeout(() => {
       const processCoupon = async () => {
@@ -64,7 +64,8 @@ const useCartCalculations = (
 
   const calculateTotal = useCallback(() => {
     const subtotal = cartItems.reduce(
-      (sum: number, item: CartItem) => sum + (Number(item?.price) || 0),
+      (sum: number, item: CartItem) =>
+        sum + (Number(getProductPrice(item)) || 0),
       0
     );
 

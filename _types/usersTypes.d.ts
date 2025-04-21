@@ -11,6 +11,7 @@ export interface User {
   religion?: "islam" | "hinduism" | "christianity" | "buddhism" | "other";
   isAdmin?: boolean;
   via?:string
+  refCredit?:number
 }
 
 

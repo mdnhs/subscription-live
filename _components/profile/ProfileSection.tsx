@@ -8,12 +8,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit, X, Copy } from "lucide-react";
+import { CircleDollarSign, Copy, Divide, Edit, X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import ProfileFormContainer from "./ProfileFormContainer";
 import ProfileInfoShow from "./ProfileInfoShow";
 import ProfilePictureUploader from "./ProfilePictureUploader";
-import { toast } from "sonner";
+import CreditMarket from "../market/CreditMarket";
 
 interface ProfileSectionProps {
   user: User;
@@ -24,6 +25,7 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isCreditMarket, setIsCreditMarket] = useState(false);
   const [userData, setUserData] = useState<User>(user);
 
   const handleImageChange = (file: File, previewUrl: string) => {
@@ -69,10 +71,10 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
       toast.error("Failed to copy to clipboard");
     }
   };
-
+  console.log(isCreditMarket);
   return (
     <Card className=" shadow-md">
-      <CardContent className="p-6 ">
+      <CardContent className="px-6 ">
         <div className="mb-8 flex flex-col sm:flex-row items-center gap-6">
           <ProfilePictureUploader
             currentImageUrl={previewImageUrl || userData?.profilePicture}
@@ -128,20 +130,40 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
               )}
             </div>
           </div>
+          {!isEditing && (
+            <Button
+              onClick={() => setIsCreditMarket((oldValue) => !oldValue)}
+              className={`flex self-start gap-2 items-center w-[104px] ${
+                isCreditMarket ? "bg-red-500 text-white hover:bg-red-400" : ""
+              }`}
+            >
+              {" "}
+              {isCreditMarket ? <X /> : <CircleDollarSign />}
+              {isCreditMarket ? (
+                <div>Close</div>
+              ) : (
+                <div> Credit: {userData?.refCredit ?? 0}</div>
+              )}
+            </Button>
+          )}
         </div>
 
         {!isEditing ? (
-          <ProfileInfoShow
-            id={userData?.id?.toString()}
-            fullName={userData.fullName || ""}
-            username={userData.username || ""}
-            email={userData.email || ""}
-            phoneNumber={userData.phoneNumber || ""}
-            birthDate={userData.birthDate || ""}
-            gender={userData.gender || ""}
-            religion={userData.religion || ""}
-            bio={userData.bio || ""}
-          />
+          isCreditMarket ? (
+            <CreditMarket refCredit={userData?.refCredit ?? 0} />
+          ) : (
+            <ProfileInfoShow
+              id={userData?.id?.toString()}
+              fullName={userData.fullName || ""}
+              username={userData.username || ""}
+              email={userData.email || ""}
+              phoneNumber={userData.phoneNumber || ""}
+              birthDate={userData.birthDate || ""}
+              gender={userData.gender || ""}
+              religion={userData.religion || ""}
+              bio={userData.bio || ""}
+            />
+          )
         ) : (
           <ProfileFormContainer
             isUpdating={isUpdating}

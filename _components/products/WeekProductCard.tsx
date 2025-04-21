@@ -6,6 +6,7 @@ import { CalendarClock } from "lucide-react";
 import Link from "next/link";
 import { FallbackImage } from "../container/FallbackImage";
 import BuyButtonContainer from "../productDetails/BuyButtonContainer";
+import { getProductPrice } from "@/function/priceFormatter";
 
 const WeekProductCard = ({ product }: { product: Product }) => {
   return (
@@ -38,7 +39,12 @@ const WeekProductCard = ({ product }: { product: Product }) => {
               {product?.title}
             </h2>
             <p className=" font-semibold bg-gradient-to-t from-brand-1 via-brand-1 to-white bg-clip-text text-transparent text-start text-2xl">
-              {product?.price?.toLocaleString()}৳
+              {getProductPrice(product)}৳
+              {product?.isOffer && (
+                <span className="text-white font-normal text-base line-through pl-2 pb-1">
+                  {product?.price?.toLocaleString()}৳
+                </span>
+              )}
             </p>
           </div>
           <Badge

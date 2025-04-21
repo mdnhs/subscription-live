@@ -1,5 +1,6 @@
 import { useCartStore } from "@/_store/CartStore";
 import { Coupon } from "@/_types/coupon";
+import { getProductPrice } from "@/function/priceFormatter";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -60,11 +61,11 @@ const OrderSummary = ({
                 </h3>
                 <dl className="mt-0.5 space-y-px text-[12px] text-gray-100">
                   <dd className="capitalize">{item?.category}</dd>
-                  <dd>৳{item?.price}</dd>
+                  <dd>৳{getProductPrice(item)}</dd>
                 </dl>
               </div>
             </div>
-            <p className="text-sm font-semibold text-white">৳{item?.price}</p>
+            <p className="text-sm font-semibold text-white">৳{getProductPrice(item)}</p>
           </li>
         ))}
       </ul>
@@ -122,7 +123,7 @@ const OrderSummary = ({
             <span>
               ৳
               {cartItems.reduce(
-                (sum, item) => sum + (Number(item?.price) || 0),
+                (sum, item) => sum + (Number(getProductPrice(item)) || 0),
                 0
               )}
             </span>
@@ -134,7 +135,7 @@ const OrderSummary = ({
                 -৳
                 {appliedCoupons.reduce((total, coupon) => {
                   const subtotal = cartItems.reduce(
-                    (sum, item) => sum + (Number(item?.price) || 0),
+                    (sum, item) => sum + (Number(getProductPrice(item)) || 0),
                     0
                   );
                   const discount = coupon.isPercentage
