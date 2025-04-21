@@ -41,7 +41,7 @@ const OrderCard: React.FC<ToolsResponse> = ({
                   category={category}
                   targetUrl={targetUrl}
                   toolData={toolData}
-                  toolId={documentId}
+                  toolId={documentId ?? ""}
                 />
               )}
             </div>

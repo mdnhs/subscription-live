@@ -24,7 +24,7 @@ const OrderAccessButton = (props: Props) => {
       // const cookieToEncrypt = JSON.stringify(props?.toolData);
       // const encryptedCookies = encrypt(cookieToEncrypt, DECRYPT_PASS);
 
-      await navigator.clipboard.writeText(props.toolId);
+      await navigator.clipboard.writeText(props?.toolId);
       toast.success(`Encrypted ${props?.category} cookies copied!`, {
         description: "Successfully copied to clipboard",
       });
