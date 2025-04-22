@@ -1,25 +1,30 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Button } from "@/components/ui/button";
-import { encrypt } from "@/function/cryptoDecrypt";
+// import { encrypt } from "@/function/cryptoDecrypt";
 import { ExternalLink } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Props = { category: string; targetUrl: string; toolData: any[] };
+type Props = {
+  category: string;
+  targetUrl: string;
+  toolData: any[];
+  toolId: string;
+};
 
 const OrderAccessButton = (props: Props) => {
-  const DECRYPT_PASS = process.env.DECRYPT_PASS ?? "";
+  // const DECRYPT_PASS = process.env.DECRYPT_PASS ?? "";
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleEncryptAndCopy = useCallback(async () => {
-    console.log(JSON.stringify(props?.toolData), "&&");
+    // console.log(JSON.stringify(props?.toolData), "&&");
     setIsLoading(true);
     try {
-      const cookieToEncrypt = JSON.stringify(props?.toolData);
-      const encryptedCookies = encrypt(cookieToEncrypt, DECRYPT_PASS);
+      // const cookieToEncrypt = JSON.stringify(props?.toolData);
+      // const encryptedCookies = encrypt(cookieToEncrypt, DECRYPT_PASS);
 
-      await navigator.clipboard.writeText(encryptedCookies);
+      await navigator.clipboard.writeText(props?.toolId);
       toast.success(`Encrypted ${props?.category} cookies copied!`, {
         description: "Successfully copied to clipboard",
       });
@@ -32,7 +37,7 @@ const OrderAccessButton = (props: Props) => {
     } finally {
       setIsLoading(false);
     }
-  }, [DECRYPT_PASS, props?.category, props?.toolData, props?.targetUrl]);
+  }, [props?.category, props?.targetUrl, props?.toolId]);
 
   return (
     <Button

@@ -14,6 +14,7 @@ const OrderCard: React.FC<ToolsResponse> = ({
   targetUrl,
   expireDate,
   isActive,
+  documentId,
 }) => {
   return (
     <Card className="overflow-hidden py-0 h-fit">
@@ -40,6 +41,7 @@ const OrderCard: React.FC<ToolsResponse> = ({
                   category={category}
                   targetUrl={targetUrl}
                   toolData={toolData}
+                  toolId={documentId ?? ""}
                 />
               )}
             </div>

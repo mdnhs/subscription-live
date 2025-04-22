@@ -14,7 +14,7 @@ export function setFormattedExpireDate(
   months: number
 ): string | Date {
   const date = new Date(orderDate);
-  const daysToAdd = months * 30;
+  const daysToAdd = Math.ceil(months * 30);
   date.setDate(date.getDate() + daysToAdd);
 
   return typeof orderDate === "string" ? date.toISOString() : date;
@@ -24,5 +24,5 @@ export function setFormattedExpireDate(
  * Returns expiration duration as a string (e.g., "30 days", "60 days")
  */
 export function getExpireDays(months: number): string {
-  return `${months * 30} days`;
+  return `${Math.ceil(months * 30)} days`;
 }

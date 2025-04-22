@@ -1,15 +1,25 @@
+import { FallbackImage } from "@/_components/container/FallbackImage";
+import { siteConfig } from "@/app/site";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import HeaderLogo from "./HeaderLogo";
+import Link from "next/link";
 import ProfileDropdown from "./ProfileDropdown";
 
 const Header = () => {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-20 transition-all duration-300">
+    <header className="fixed top-0 z-50 w-full border-b bg-background/15 backdrop-blur xl h-20 transition-all duration-300">
       <div className="container h-full">
         <nav className="flex items-center justify-between h-full">
-          <HeaderLogo />
+          <Link href="/" className="text-lg font-bold">
+            <FallbackImage
+              src={siteConfig.websiteLogo}
+              width={50}
+              height={50}
+              quality={100}
+              className="rounded-2xl"
+            />
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
@@ -32,7 +42,7 @@ const Header = () => {
           </Sheet>
         </nav>
       </div>
-        {/* <ProgressBar /> */}
+      {/* <ProgressBar /> */}
     </header>
   );
 };

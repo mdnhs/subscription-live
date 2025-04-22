@@ -1,7 +1,5 @@
-// src/components/ProfileDropdown.tsx
 "use client";
-import { useUserStore } from "@/_store/UserStore";
-import { ModeToggle } from "@/components/ModeToggle";
+import { User as UserType } from "@/_types/usersTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getCurrentUser } from "@/services/api/userRequest";
+import useFetch from "@/services/fetch/csrFecth";
 import useSessionStore from "@/services/store/useSessionStore";
 import {
   Loader,
@@ -24,9 +24,8 @@ import {
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-// Define the session type (optional, for clarity)
 interface SessionData {
   user: {
     id: string;
@@ -42,41 +41,93 @@ interface SessionData {
 
 const ProfileDropdown = () => {
   const router = useRouter();
+  const { fetchPublic } = useFetch();
   const { data: session, status } = useSession();
-  const { session: userSession, setSession, clearSession } = useSessionStore();
-  const { user } = useUserStore();
+  const {
+    session: userSession,
+    setSession,
+    setCurrentUser,
+    clearSession,
+  } = useSessionStore();
+  const [userData, setUserData] = useState<UserType>();
+  const [isLoading, setIsLoading] = useState(false);
 
   const adminUrl = useMemo(
     () => process.env.NEXT_PUBLIC_REST_API_URL || "#",
     []
   );
 
-  // Sync next-auth session with Zustand store
+  // Sync next-auth session with Zustand store and fetch user data
   useEffect(() => {
-    if (status === "authenticated" && session) {
-      // Example: Map next-auth session to your session structure
-      // Replace with actual session response or API call if needed
-      const sessionData: SessionData = {
-        user: {
-          id: (session as SessionData).user.id || "", // Fallback to an empty string if undefined
-          name: session.user?.name || "",
-          email: session.user?.email || "",
-          jwt: (session as SessionData).user.jwt,
-        },
-        expires: session.expires,
-      };
-
-      setSession(sessionData);
-    } else if (status === "unauthenticated") {
-      clearSession(); // Clear session on logout
+    // Only proceed if authenticated and we have a session
+    if (status !== "authenticated" || !session) {
+      return;
     }
-  }, [status, session, setSession, clearSession]);
 
-  // Memoize session button to prevent unnecessary re-renders
+    // Sync session with store first (this doesn't need to be gated by loading state)
+    const sessionData: SessionData = {
+      user: {
+        id: (session as SessionData).user.id || "",
+        name: session.user?.name || "",
+        email: session.user?.email || "",
+        jwt: (session as SessionData).user.jwt,
+      },
+      expires: session.expires,
+    };
+    setSession(sessionData);
+
+    // Setup function to fetch user data
+    const fetchUserData = async () => {
+      // Prevent duplicate API calls
+      if (isLoading || userData) {
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        const req = getCurrentUser((session as SessionData).user.jwt);
+        const response = await fetchPublic(req);
+
+        if (!response.success) {
+          throw new Error(response.message || "User get failed");
+        }
+
+        setUserData(response?.data);
+        setCurrentUser(response?.data);
+      } catch (error) {
+        console.error("User get error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Fetch user data
+    fetchUserData();
+  }, [
+    status,
+    session,
+    setSession,
+    setCurrentUser,
+    fetchPublic,
+    userData,
+    isLoading,
+  ]);
+
+  // Handle unauthenticated state
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      clearSession();
+      setUserData(undefined); // Clear user data when logged out
+    }
+  }, [status, clearSession]);
+
+  // Memoize session button
   const SessionButton = useMemo(() => {
     const handleSignOut = () =>
       signOut({ redirect: false }).then(() => {
-        clearSession(); // Clear Zustand session on sign-out
+        clearSession();
+        setUserData(undefined);
         router.push(process.env.NEXTAUTH_URL || "/");
       });
 
@@ -87,15 +138,15 @@ const ProfileDropdown = () => {
             <DropdownMenuTrigger className="focus:outline-none cursor-pointer">
               <Avatar>
                 <AvatarImage
-                  src={user?.profilePicture ?? "/images/profile-demo.jpeg"}
+                  src={session.user?.image ?? "/images/profile-demo.jpeg"}
                 />
                 <AvatarFallback>UE</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="mt-2">
-              <DropdownMenuLabel>Control Panel</DropdownMenuLabel>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {user?.isAdmin && (
+              {userData?.isAdmin && (
                 <Link href={adminUrl} target="_blank">
                   <DropdownMenuItem className="cursor-pointer">
                     <Sparkles />
@@ -103,13 +154,13 @@ const ProfileDropdown = () => {
                   </DropdownMenuItem>
                 </Link>
               )}
-              <Link href="/profile">
+              <Link href="/my-account?tab=profile">
                 <DropdownMenuItem className="cursor-pointer">
                   <User />
                   Profile
                 </DropdownMenuItem>
               </Link>
-              <Link href="/my-orders">
+              <Link href="/my-account?tab=my-orders">
                 <DropdownMenuItem className="cursor-pointer">
                   <ShoppingBag />
                   My Orders
@@ -147,8 +198,8 @@ const ProfileDropdown = () => {
     router,
     adminUrl,
     clearSession,
-    user?.isAdmin,
-    user?.profilePicture,
+    userData?.isAdmin,
+    session?.user?.image,
   ]);
 
   return (
@@ -160,7 +211,7 @@ const ProfileDropdown = () => {
           <p className="italic text-xs text-end">Welcome to UpEasy 👋</p>
           <div className="text-end text-sm">
             {status === "authenticated" ? (
-              <p>{user?.username ?? userSession?.user?.name}</p>
+              <p>{userData?.username ?? userSession?.user?.name}</p>
             ) : (
               <p>
                 Don&apos;t have an account?{" "}
@@ -174,11 +225,11 @@ const ProfileDropdown = () => {
       )}
 
       {SessionButton}
-      {status === "loading" ? (
+      {/* {status === "loading" ? (
         <Button className="rounded-full h-9 w-9 animate-pulse dark:bg-gray-500 bg-gray-200"></Button>
       ) : (
         <ModeToggle />
-      )}
+      )} */}
     </>
   );
 };

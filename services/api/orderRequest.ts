@@ -3,7 +3,7 @@
 const getOrders: any = (email: string) => {
   return {
     method: "GET",
-    path: `/api/orders?populate[products][populate][0]=banner&populate[tools]=*&filters[email][$eq]=${email}&filters[isPaid][$eq]=true`,
+    path: `/api/orders?populate[products][populate][0]=banner&populate[tools]=*&filters[email][$eq]=${email}`,
     revalidate: 0.1,
   };
 };
@@ -17,7 +17,6 @@ const createOrder: any = (payload: any) => {
 };
 
 const updateOrder: any = (payload: any, orderId: string) => {
-  console.log(payload, "payload");
   return {
     method: "PUT",
     path: `/api/orders/${orderId}`,
@@ -25,4 +24,11 @@ const updateOrder: any = (payload: any, orderId: string) => {
   };
 };
 
-export { getOrders, createOrder, updateOrder };
+const getUserOrders: any = (email: string) => {
+  return {
+    method: "GET",
+    path: `/api/orders?filters[email][$eq]=${email}`,
+  };
+};
+
+export { getOrders, createOrder, updateOrder, getUserOrders };

@@ -1,9 +1,37 @@
+import type { NextAuthConfig, Session } from "next-auth";
 import NextAuth from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
-import axios from "axios";
-import { NextAuthConfig } from "next-auth";
 
 const apiUrl = process.env.NEXT_PUBLIC_REST_API_URL;
+
+// Extend the default interfaces
+declare module "next-auth" {
+  interface User {
+    id?: string;
+    jwt?: string;
+  }
+
+  interface Session {
+    user: User & {
+      id: string;
+      jwt?: string;
+      image?: string | null;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    user?: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      jwt?: string;
+    };
+  }
+}
 
 export const authConfig: NextAuthConfig = {
   trustHost: true,
@@ -14,7 +42,6 @@ export const authConfig: NextAuthConfig = {
         identifier: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      // auth.ts
       async authorize(credentials) {
         if (!credentials?.identifier || !credentials?.password) {
           console.log("Missing credentials");
@@ -22,64 +49,84 @@ export const authConfig: NextAuthConfig = {
         }
 
         try {
-          const response = await axios.post(
-            `${apiUrl}/api/auth/local`,
-            {
+          const response = await fetch(`${apiUrl}/api/auth/local`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
               identifier: credentials.identifier,
               password: credentials.password,
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-              timeout: 5000, // 5 second timeout
-            }
-          );
+            }),
+            signal: AbortSignal.timeout(5000), // Equivalent to axios timeout
+          });
 
-          if (response.status !== 200) {
+          const data = await response.json();
+
+          if (!response.ok) {
             console.log("Strapi returned non-200 status:", response.status);
             return null;
           }
 
           return {
-            id: response.data.user.id.toString(),
-            name: response.data.user.username,
-            email: response.data.user.email,
-            jwt: response.data.jwt,
+            id: data.user.id.toString(),
+            name: data.user.username,
+            email: data.user.email,
+            jwt: data.jwt,
+            image: data.user.profilePicture || null,
           };
         } catch (error) {
-          if (axios.isAxiosError(error)) {
-            console.log("Axios error details:", {
-              message: error.message,
-              response: error.response?.data,
-              status: error.response?.status,
-            });
-          } else {
-            console.log("Unexpected error:", error);
-          }
+          console.log("Fetch error:", {
+            message: error instanceof Error ? error.message : "Unknown error",
+            cause: error instanceof Error ? error.cause : undefined,
+          });
           return null;
         }
       },
     }),
   ],
   callbacks: {
-    // Include JWT token in the session
-    async session({ session, token }) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      session.user = token.user as any;
+    async session({ session, token }: { session: Session; token: JWT }) {
+      if (token.user) {
+        session.user = {
+          ...session.user,
+          id: token.user.id,
+          name: token.user.name || null,
+          email: token.user.email || null,
+          image: token.user.image || null,
+          jwt: token.user.jwt,
+        };
+      }
       return session;
     },
-    // Add user info and JWT to the token
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.user = user;
+        token.user = {
+          id: user.id || "",
+          name: user.name || null,
+          email: user.email || null,
+          image: user.image || null,
+          jwt: user.jwt,
+        };
       }
+
+      if (trigger === "update" && session?.user) {
+        token.user = {
+          ...token.user,
+          id: session.user.id,
+          name: session.user.name || null,
+          email: session.user.email || null,
+          image: session.user.image || null,
+          jwt: session.user.jwt,
+        };
+      }
+
       return token;
     },
   },
   pages: {
     signIn: "/login",
-    error: "/login", // Error code passed in query string as ?error=
+    error: "/login",
   },
   session: {
     strategy: "jwt",

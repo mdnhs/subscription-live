@@ -4,8 +4,16 @@ const getTool: any = () => {
   return {
     method: "GET",
     path: `/api/tools`,
-    revalidate: 15,
+    revalidate: 0.1,
   };
 };
 
-export { getTool };
+const updateTool: any = (id: string, payload:any) => {
+  return {
+    method: "PUT",
+    path: `/api/tools/${id}`,
+    payload: payload,
+  };
+};
+
+export { getTool, updateTool };

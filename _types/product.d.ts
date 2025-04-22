@@ -5,6 +5,9 @@ export interface Product {
   title: string;
   getAccessData: string;
   targetUrl: string;
+  isOffer: boolean;
+  isCreditOffer: boolean;
+  offerAmount: number;
   description: Array<{
     type: string;
     children: Array<{ type: string; text: string }>;
@@ -56,6 +59,13 @@ export interface Product {
     createdAt: string;
     updatedAt: string;
     publishedAt: string;
+  }>;
+  reviews: Array<{
+    id: string;
+    rating: number;
+    comment: string;
+    user: string;
+    date: string;
   }>;
 }
 

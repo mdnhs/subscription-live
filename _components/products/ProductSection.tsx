@@ -1,25 +1,29 @@
 "use client";
 import { Product } from "@/_types/product";
-import { ArrowRight } from "lucide-react";
+import { LinkButton } from "../container/UpEasyButtons";
 import ProductsList from "./ProductsList";
-import Link from "next/link";
+import SectionHeader from "../ui/SectionHeader";
 
-const ProductSection = ({ products }: { products: Product[] }) => {
+const ProductSection = ({
+  products,
+  headline,
+  url,
+  type,
+}: {
+  products: Product[];
+  headline: string;
+  url: string;
+  type: string;
+}) => {
   return (
-    <div className="p-10 bg-background/95 rounded-2xl">
-      <div className="pb-10 flex flex-wrap justify-between items-center">
-        <h2 className="font-bold text-2xl">Brand New</h2>
-        <Link href={"/explore"}>
-        <span
-          className="font-normal text-[14px]
-          float-right text-primary flex 
-          items-center cursor-pointer hover:text-teal-600"
-        >
-          View All Collection <ArrowRight className="h-4" />
-        </span>
-        </Link>
+    <div className={`${type === "week" ? "h-[calc(100vh-60vh)]" : "h-fit"}`}>
+      <div className="bg-transparent backdrop-blur-3xl rounded-2xl h-fit px-5 overflow-hidden md:overflow-visible py-10">
+        <div className="pb-5 flex flex-wrap justify-between items-center">
+          <SectionHeader text={headline} />
+          <LinkButton btnText="View All" target={url ?? "#"} />
+        </div>
+        <ProductsList products={products} type={type} />
       </div>
-      <ProductsList products={products} />
     </div>
   );
 };
