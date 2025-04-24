@@ -70,6 +70,7 @@ export interface Product {
 }
 
 export interface ToolsResponse {
+  id:number,
   targetUrl: string;
   category: string;
   month: number;
