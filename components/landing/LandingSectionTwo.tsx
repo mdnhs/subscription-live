@@ -68,7 +68,7 @@ export const LandingSectionTwo = () => {
         />
         <FallbackImage
           src={"/icons/star2.svg"}
-          className=" h-60 w-60 z-40 -bottom-28 absolute right-2 pointer-events-none"
+          className=" h-60 w-60 z-40 -bottom-24 absolute right-2 pointer-events-none"
         />
         <FallbackImage
           src={"/images/monkey-bg.svg"}

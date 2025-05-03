@@ -7,8 +7,13 @@ import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-const BuyButtonContainer = ({ product }: { product: Product }) => {
-  console.log(product?.isOffer, "++");
+const BuyButtonContainer = ({
+  product,
+  isCredit,
+}: {
+  product: Product;
+  isCredit?: boolean;
+}) => {
   const { status } = useSession();
   const router = useRouter();
   const pathName = usePathname();
@@ -24,7 +29,7 @@ const BuyButtonContainer = ({ product }: { product: Product }) => {
 
     try {
       // Set isCredit value in the store
-      if (product?.isCreditOffer !== undefined) {
+      if (isCredit !== undefined) {
         setIsCredit(product?.isCreditOffer);
       }
 

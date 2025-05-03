@@ -10,8 +10,10 @@ import { getProductPrice } from "@/function/priceFormatter";
 
 const CommonProductCard = ({
   product,
+  isCredit,
 }: {
   product: Product;
+  isCredit?: boolean;
 }) => {
   return (
     <Card className="group border rounded-2xl border-gray-50/20 bg-brand-3 backdrop-blur-2xl text-white overflow-hidden shadow-md hover:shadow-lg py-0 gap-0 p-3 w-full  h-fit relative">
@@ -60,7 +62,7 @@ const CommonProductCard = ({
               )}
             </p>
           </div>
-          <BuyButtonContainer product={product} />
+          <BuyButtonContainer isCredit={isCredit} product={product} />
         </div>
       </CardContent>
     </Card>

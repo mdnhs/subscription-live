@@ -15,7 +15,7 @@ interface PaymentMethodsProps {
   setSelectedPayment: (method: string) => void;
   handleBkashPayment: () => Promise<void>;
   isProcessing: boolean;
-  isFree: boolean;
+  isFree?: boolean;
   total: number;
   showSupportMessage: boolean;
 }
