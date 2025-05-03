@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className=" overflow-x-hidden">
       <body
-        className={`${montserrat.variable} ${bruno.variable} ${aboreto.variable} font-montserrat antialiased relative bg-brand-3 overflow-x-hidden !min-w-full`}
+        className={`${montserrat.variable} ${bruno.variable} ${aboreto.variable} font-montserrat antialiased relative bg-brand-4 overflow-x-hidden !min-w-full`}
       >
         <Toaster position="bottom-right" richColors />
         <ThemeProvider
@@ -37,11 +37,11 @@ export default function RootLayout({
             <Header />
             <FallbackImage
               src={"/images/hero-left-bg.svg"}
-              className=" h-[1500px] w-[1500px] absolute -top-80 left-0 pointer-events-none  -z-10"
+              className=" h-[1500px] w-[1500px] fixed -top-80 left-0 pointer-events-none  -z-10"
             />
             <FallbackImage
               src={"/images/hero-right-bg.svg"}
-              className=" h-[1500px] w-[1500px] absolute -top-80 right-0 pointer-events-none scale-x-[-1] -z-10"
+              className=" h-[1500px] w-[1500px] fixed -top-80 right-0 pointer-events-none scale-x-[-1] -z-10"
             />
             {children}
             <Footer />

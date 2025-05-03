@@ -1,6 +1,8 @@
 // app/page.tsx
 import ProductSection from "@/_components/products/ProductSection";
 import LandingHero from "@/components/landing/LandingHero";
+import { LandingSectionOne } from "@/components/landing/LandingSectionOne";
+import { LandingSectionTwo } from "@/components/landing/LandingSectionTwo";
 import { getProducts } from "@/services/api/productRequest";
 import { fetchPublic } from "@/services/fetch/ssrFetch";
 
@@ -19,10 +21,7 @@ export default async function Home() {
       <LandingHero />
 
       {/* Products Section with enhanced styling */}
-      <section
-        id="weekend-products"
-        className="container text-center mx-auto px-4"
-      >
+      <section id="weekend-products" className="container text-center px-4">
         <ProductSection
           headline="Trending on this week"
           url="/market"
@@ -30,8 +29,10 @@ export default async function Home() {
           type="week"
         />
       </section>
+      <LandingSectionOne products={products} />
+      <LandingSectionTwo />
 
-      <section id="products" className="container text-center mx-auto px-4">
+      <section id="products" className="container text-center px-4">
         <ProductSection
           headline="Buy your favorite one"
           url="/market"
