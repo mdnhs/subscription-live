@@ -10,6 +10,7 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
   const {
     loading,
     total,
+    isFree,
     isProcessing,
     handleBkashPayment,
     selectedPayment,
@@ -22,7 +23,6 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
   } = useCheckout(tools);
 
   if (loading) return <Loader />;
-
   return (
     <div className="App">
       <div className="relative mx-auto w-full bg-brand-3/20 backdrop-blur-md rounded-2xl overflow-hidden">
@@ -35,6 +35,7 @@ const CheckoutSection = ({ tools }: { tools: ToolsResponse[] }) => {
                 <span className="mt-2 block h-1 w-10 bg-teal-600 sm:w-20 rounded-r-2xl" />
               </h1>
               <PaymentMethods
+                isFree={isFree}
                 selectedPayment={selectedPayment}
                 setSelectedPayment={setSelectedPayment}
                 handleBkashPayment={handleBkashPayment}

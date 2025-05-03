@@ -9,6 +9,7 @@ export type CartItem = {
   month: number;
   isOffer?: boolean;
   offerAmount: number;
+  isFree?: boolean;
   banner?: {
     url: string;
   };

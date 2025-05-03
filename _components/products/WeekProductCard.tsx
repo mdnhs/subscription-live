@@ -10,7 +10,7 @@ import { getProductPrice } from "@/function/priceFormatter";
 
 const WeekProductCard = ({ product }: { product: Product }) => {
   return (
-    <Card className="group border rounded-2xl border-gray-50/20 bg-transparent backdrop-blur-xs text-white shadow-md hover:shadow-lg py-0 gap-0  w-full relative">
+    <Card className="group border rounded-2xl border-gray-50/20 bg-brand-3/50 backdrop-blur-xs text-white shadow-md hover:shadow-lg py-0 gap-0  w-full relative">
       <div className="absolute w-full h-full rounded-2xl overflow-hidden">
         <FallbackImage
           src={product?.banner?.url}
@@ -39,9 +39,9 @@ const WeekProductCard = ({ product }: { product: Product }) => {
               {product?.title}
             </h2>
             <p className=" font-semibold bg-gradient-to-t from-brand-1 via-brand-1 to-white bg-clip-text text-transparent text-start text-2xl">
-              {getProductPrice(product)}৳
-              {product?.isOffer && (
-                <span className="text-white font-normal text-base line-through pl-2 pb-1">
+              {product?.isFree ? "FREE" : `${getProductPrice(product)}৳`}{" "}
+              {(product?.isOffer || product?.isFree) && (
+                <span className="text-white font-normal text-base line-through">
                   {product?.price?.toLocaleString()}৳
                 </span>
               )}

@@ -6,6 +6,7 @@ export interface Product {
   getAccessData: string;
   targetUrl: string;
   isOffer: boolean;
+  isFree: boolean;
   isCreditOffer: boolean;
   offerAmount: number;
   description: Array<{
@@ -70,7 +71,7 @@ export interface Product {
 }
 
 export interface ToolsResponse {
-  id:number,
+  id: number;
   targetUrl: string;
   category: string;
   month: number;

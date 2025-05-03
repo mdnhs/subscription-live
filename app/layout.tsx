@@ -39,6 +39,10 @@ export default function RootLayout({
               src={"/images/hero-left-bg.svg"}
               className=" h-[1500px] w-[1500px] absolute -top-80 left-0 pointer-events-none  -z-10"
             />
+            <FallbackImage
+              src={"/images/hero-right-bg.svg"}
+              className=" h-[1500px] w-[1500px] absolute -top-80 right-0 pointer-events-none scale-x-[-1] -z-10"
+            />
             {children}
             <Footer />
             <SpeedInsights />

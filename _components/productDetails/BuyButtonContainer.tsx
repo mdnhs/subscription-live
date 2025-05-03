@@ -7,14 +7,8 @@ import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-const BuyButtonContainer = ({
-  product,
-  isCredit,
-}: {
-  product: Product;
-  isCredit?: boolean;
-}) => {
-  console.log(isCredit, "++");
+const BuyButtonContainer = ({ product }: { product: Product }) => {
+  console.log(product?.isOffer, "++");
   const { status } = useSession();
   const router = useRouter();
   const pathName = usePathname();
@@ -30,8 +24,8 @@ const BuyButtonContainer = ({
 
     try {
       // Set isCredit value in the store
-      if (isCredit !== undefined) {
-        setIsCredit(isCredit);
+      if (product?.isCreditOffer !== undefined) {
+        setIsCredit(product?.isCreditOffer);
       }
 
       // Clear existing cart items if any
@@ -39,19 +33,20 @@ const BuyButtonContainer = ({
 
       // Add the new product to cart
       addToCart({
-        documentId: product.documentId,
-        title: product.title,
-        price: product.price,
-        category: product.category,
-        month: product.month,
-        banner: product.banner,
-        isOffer: product.isOffer,
-        offerAmount: product.offerAmount,
+        documentId: product?.documentId,
+        title: product?.title,
+        price: product?.price,
+        category: product?.category,
+        month: product?.month,
+        banner: product?.banner,
+        isOffer: product?.isOffer,
+        offerAmount: product?.offerAmount,
+        isFree: product?.isFree,
       });
 
       // Show success notification
       toast.success("Added to Cart", {
-        description: `${product.title} has been added to your cart.`,
+        description: `${product?.title} has been added to your cart.`,
         duration: 3000,
       });
 

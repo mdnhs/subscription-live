@@ -15,6 +15,7 @@ interface PaymentMethodsProps {
   setSelectedPayment: (method: string) => void;
   handleBkashPayment: () => Promise<void>;
   isProcessing: boolean;
+  isFree: boolean;
   total: number;
   showSupportMessage: boolean;
 }
@@ -24,6 +25,7 @@ const PaymentMethods = ({
   setSelectedPayment,
   handleBkashPayment,
   isProcessing,
+  isFree,
   total,
   showSupportMessage,
 }: PaymentMethodsProps) => {
@@ -32,26 +34,30 @@ const PaymentMethods = ({
   useEffect(() => {
     setIsDialogOpen(showSupportMessage);
   }, [showSupportMessage]);
+  console.log(isFree, "isFree");
 
   return (
     <div className="mt-6">
-      <h2 className="text-lg font-medium mb-4">Payment Method</h2>
-      <div className="grid grid-cols-2 gap-4">
-        {siteConfig?.paymentMethods?.map(({ id, name, icon }) => (
-          <button
-            key={id}
-            onClick={() => setSelectedPayment(id)}
-            className={`p-4 border rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-              selectedPayment === id
-                ? "border-brand-1 bg-brand-1/10"
-                : "border-gray-200 hover:border-brand-1"
-            }`}
-          >
-            <span className="text-2xl">{icon}</span>
-            <span>{name}</span>
-          </button>
-        ))}
-      </div>
+      {!isFree && <h2 className="text-lg font-medium mb-4">Payment Method</h2>}
+      {!isFree && (
+        <div className="grid grid-cols-2 gap-4">
+          {siteConfig?.paymentMethods?.map(({ id, name, icon }) => (
+            <button
+              key={id}
+              onClick={() => setSelectedPayment(id)}
+              className={`p-4 border rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+                selectedPayment === id
+                  ? "border-brand-1 bg-brand-1/10"
+                  : "border-gray-200 hover:border-brand-1"
+              }`}
+            >
+              <span className="text-2xl">{icon}</span>
+              <span>{name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {total > 0 && !showSupportMessage && (
         <div className="mt-6">
           {selectedPayment === "bkash" && (
@@ -60,7 +66,11 @@ const PaymentMethods = ({
               disabled={isProcessing}
               className="[background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF] rounded-full text-lg font-semibold text-white h-12 px-6"
             >
-              {isProcessing ? "Processing..." : "Pay with bKash"}
+              {isProcessing
+                ? "Processing..."
+                : isFree
+                ? "Claim Free"
+                : "Pay with bKash"}
             </Button>
           )}
           {selectedPayment === "nagad" && (
