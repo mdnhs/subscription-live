@@ -1,6 +1,7 @@
-import { FallbackImage } from "@/_components/container/FallbackImage";
-import { Button } from "../ui/button";
 import InstructionCard from "@/_components/cards/InstructionCard";
+import { FallbackImage } from "@/_components/container/FallbackImage";
+import ExtensionButton from "@/_components/extension/ExtensionButton";
+import WatchTutorial from "@/_components/tutorial/WatchTutorial";
 
 const instructionList = [
   {
@@ -57,9 +58,10 @@ export const LandingSectionTwo = () => {
           We strive to provide a secure, trusted, and accessible platform that
           makes it easy for anyone to get involved in the world of NFTs.
         </p>
-        <Button className="[background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF] rounded-full text-lg font-semibold text-white h-12 px-6 w-fit">
-          Watch Tutorial
-        </Button>
+        <div className="flex gap-4 w-full">
+          <ExtensionButton />
+          <WatchTutorial />
+        </div>
       </article>
       <article className="relative">
         <FallbackImage

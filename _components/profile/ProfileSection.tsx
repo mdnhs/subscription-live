@@ -71,7 +71,6 @@ const ProfileSection = ({ user }: ProfileSectionProps) => {
       toast.error("Failed to copy to clipboard");
     }
   };
-  console.log(isCreditMarket);
   return (
     <Card className=" shadow-md bg-brand-3/5 backdrop-blur-2xl">
       <CardContent className="px-6 ">

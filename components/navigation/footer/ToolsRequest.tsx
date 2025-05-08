@@ -1,11 +1,21 @@
 "use client";
-import { useState } from "react";
 import { FallbackImage } from "@/_components/container/FallbackImage";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { addRequestedTool, getRequestedTool } from "@/services/api/toolRequest";
+import { fetchPublic } from "@/services/fetch/ssrFetch";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
-// Reusable corner component for DRY code
-const CornerDecoration = ({ position }: { position: "bottom-left" | "top-left" | "top-right" | "bottom-right" }) => {
+// Reusable corner component
+const CornerDecoration = ({
+  position,
+}: {
+  position: "bottom-left" | "top-left" | "top-right" | "bottom-right";
+}) => {
   const rotationMap = {
     "bottom-left": "rotate-0",
     "top-left": "rotate-90",
@@ -32,25 +42,73 @@ const CornerDecoration = ({ position }: { position: "bottom-left" | "top-left" |
 
 const ToolsRequest = () => {
   const [toolRequest, setToolRequest] = useState("");
+  const [requestedTools, setRequestedTools] = useState<{ toolsName: string }[]>(
+    []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  // Memoize unique tool counts
+  const toolCounts = useMemo(() => {
+    return requestedTools.reduce((acc, item) => {
+      const name = item.toolsName.trim().toLowerCase();
+      if (name) {
+        acc[name] = (acc[name] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+  }, [requestedTools]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!toolRequest.trim()) return;
+    const trimmedTool = toolRequest.trim();
+    if (!trimmedTool) {
+      toast.error("Please enter a tool name");
+      return;
+    }
 
     setIsSubmitting(true);
+    const payload = { data: { toolsName: trimmedTool } };
     try {
-        // Implement your form submission logic here
-        console.log("Tool requested:", toolRequest);
-        // Reset form after successful submission
-        setToolRequest("");
-        // You would add API call here
+      const req = addRequestedTool(payload);
+      const res = await fetchPublic(req);
+      if (!res.data) {
+        toast.error(res.message || "Failed to submit tool request");
+        return;
+      }
+
+      // Update tools list after successful submission
+      setRequestedTools((prev) => [...prev, { toolsName: trimmedTool }]);
+      setToolRequest("");
+      toast.success("Tool request submitted successfully!");
     } catch (error) {
-        console.error("Error submitting request:", error);
+      console.error("Error submitting request:", error);
+      toast.error("An error occurred while submitting");
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
-};
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const req = getRequestedTool();
+        const res = await fetchPublic(req);
+        if (res?.data) {
+          setRequestedTools(res.data);
+        } else {
+          toast.error(res?.message || "Failed to fetch requested tools");
+        }
+      } catch (error) {
+        console.error("Error fetching tools:", error);
+        toast.error("An error occurred while fetching tools");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <section className="container py-10 px-4">
@@ -60,16 +118,16 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> 
           src="/icons/style-line.svg"
           alt="Top decorative line"
           imgClassName="h-full w-full"
-          className="h-8 w-1/3 md:h-10 absolute -top-5 left-1/2 transform -translate-x-1/2"
+          className="h-8 w-1/3 md:h-10 absolute -top-5 left-1/2 -translate-x-1/2"
         />
         <FallbackImage
           src="/icons/style-line.svg"
           alt="Bottom decorative line"
           imgClassName="h-full w-full"
-          className="h-8 w-1/3 md:h-10 absolute -bottom-5 left-1/2 transform -translate-x-1/2"
+          className="h-8 w-1/3 md:h-10 absolute -bottom-5 left-1/2 -translate-x-1/2"
         />
 
-        {/* Corner decorations using reusable component */}
+        {/* Corner decorations */}
         <CornerDecoration position="bottom-left" />
         <CornerDecoration position="top-left" />
         <CornerDecoration position="top-right" />
@@ -85,18 +143,41 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> 
           </div>
 
           <div className="md:col-span-6 md:row-span-2">
-            <p className="text-base md:text-lg">
-              We have a blog related to NFT so we can share thoughts and
-              routines on our blog which is updated weekly.
-              <br />
-              <br />
-              We have a blog related to NFT so we can share thoughts and
-              routines on our blog which is updated weekly.
-              <br />
-              <br />
+            <p className="text-base md:text-lg mb-4">
               We have a blog related to NFT so we can share thoughts and
               routines on our blog which is updated weekly.
             </p>
+            {isLoading ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <Skeleton className="h-6 w-full mb-2" />
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-6 w-1/2" />
+                </CardContent>
+              </Card>
+            ) : Object.keys(toolCounts).length > 0 ? (
+              <Card className="bg-brand-3/20 backdrop-blur-xl text-white rounded-2xl">
+                <CardContent>
+                  <ScrollArea className="h-[200px] pr-4">
+                    <ul className="list-disc flex flex-wrap gap-5">
+                      {Object.entries(toolCounts).map(([name, count]) => (
+                        <li key={name} className="text-base ml-4 mb-2">
+                          {name} ({count})
+                        </li>
+                      ))}
+                    </ul>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="pt.ConcurrentModificationException 6">
+                  <p className="text-base text-muted-foreground">
+                    No tools requested yet.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="md:col-span-6">
@@ -111,11 +192,12 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> 
                 onChange={(e) => setToolRequest(e.target.value)}
                 aria-label="Enter tool name"
                 required
+                disabled={isSubmitting}
               />
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="[background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF] rounded-full text-lg font-semibold text-white h-12 px-6 whitespace-nowrap"
+                className="rounded-full text-lg font-semibold text-white h-12 px-6 whitespace-nowrap bg-gradient-to-r from-brand-1 to-brand-2"
               >
                 {isSubmitting ? "Submitting..." : "Submit"}
               </Button>

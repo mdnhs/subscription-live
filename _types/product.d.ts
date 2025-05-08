@@ -81,5 +81,10 @@ export interface ToolsResponse {
   totalOrder?: number;
   createOrderDate?: string;
   expireDate?: string;
+  profile?: string;
+  email?: string;
+  password?: string;
+  pin?: string;
   isActive?: boolean;
+  isMobile?: boolean;
 }

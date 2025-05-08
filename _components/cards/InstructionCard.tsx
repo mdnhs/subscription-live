@@ -21,7 +21,7 @@ const InstructionCard = (props: Props) => {
         imgClassName="rounded-lg h-full w-full object-contain"
         className="h-10 w-10 absolute bottom-0.5 -left-2 rotate-180"
       />
-      <div className="bg-brand-6 rounded-lg p-2">
+      <div className="bg-brand-1 rounded-lg p-2">
         {" "}
         <FallbackImage
           src={props.image}

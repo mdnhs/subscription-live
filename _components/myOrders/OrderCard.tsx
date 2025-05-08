@@ -6,7 +6,19 @@ import {
   getFormattedExpireDate,
 } from "@/function/dateFormatter";
 import OrderAccessButton from "./OrderAccessButton";
-import { Calendar, Hash, Info, Clock } from "lucide-react";
+import {
+  Calendar,
+  Hash,
+  Info,
+  Clock,
+  Mail,
+  LockKeyholeOpen,
+  User,
+  Key,
+  Copy,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useState } from "react";
 import { toast } from "sonner";
+import { decrypt } from "@/function/cryptoDecrypt";
 
 // Helper function to calculate remaining time
 const calculateRemainingTime = (expireDate: Date): string => {
@@ -27,7 +40,9 @@ const calculateRemainingTime = (expireDate: Date): string => {
 
   // Convert milliseconds to days, hours, and minutes
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const diffHours = Math.floor(
+    (diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+  );
   const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
 
   return `${diffDays}d ${diffHours}h ${diffMinutes}m`;
@@ -40,9 +55,15 @@ const OrderCard: React.FC<ToolsResponse> = ({
   targetUrl,
   expireDate,
   isActive,
+  isMobile,
   documentId,
   id,
+  email,
+  password,
+  pin,
+  profile,
 }) => {
+  const encryptionKey = process.env.DECRYPT_PASS || "";
   const daysUntilExpiry = getExpireDays(month);
   const expireDateTime = new Date(expireDate ?? new Date());
   const formattedExpiryDate = getFormattedExpireDate(
@@ -62,6 +83,9 @@ const OrderCard: React.FC<ToolsResponse> = ({
 
   // State for copy feedback
   const [isCopied, setIsCopied] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPin, setShowPin] = useState(false);
 
   // Click to copy Tool ID
   const handleCopyId = async () => {
@@ -69,12 +93,33 @@ const OrderCard: React.FC<ToolsResponse> = ({
       try {
         await navigator.clipboard.writeText(String(id));
         setIsCopied(true);
+        setCopiedField("id");
         toast.success(`Tool ID ${id} copied to clipboard!`);
-        setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+        setTimeout(() => {
+          setIsCopied(false);
+          setCopiedField(null);
+        }, 2000); // Reset after 2 seconds
       } catch (err) {
         console.error("Failed to copy:", err);
         toast("Failed to copy Tool ID.");
       }
+    }
+  };
+
+  // Generic copy handler for email, password, and pin
+  const handleCopy = async (value: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setIsCopied(true);
+      setCopiedField(field);
+      toast.success(`${field} copied to clipboard!`);
+      setTimeout(() => {
+        setIsCopied(false);
+        setCopiedField(null);
+      }, 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error(`Failed to copy ${field}:`, err);
+      toast(`Failed to copy ${field}.`);
     }
   };
 
@@ -113,7 +158,9 @@ const OrderCard: React.FC<ToolsResponse> = ({
                   transition-all duration-300 
                   cursor-pointer 
                   animate-in fade-in
-                  ${isCopied ? "animate-pulse-once" : ""}
+                  ${
+                    isCopied && copiedField === "id" ? "animate-pulse-once" : ""
+                  }
                 `}
                 onClick={handleCopyId}
                 role="button"
@@ -125,7 +172,7 @@ const OrderCard: React.FC<ToolsResponse> = ({
             </TooltipTrigger>
             <TooltipContent className=" border-neon-blue">
               <p>
-                {isCopied
+                {isCopied && copiedField === "id"
                   ? "Copied!"
                   : `Click to copy Tool ID: ${id || "Not Available"}`}
               </p>
@@ -135,8 +182,172 @@ const OrderCard: React.FC<ToolsResponse> = ({
       </CardHeader>
       <CardContent className="p-6 space-y-6 text-gray-200">
         <div className="flex flex-col gap-3">
+          {isMobile && (
+            <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="min-w-5 h-5 text-neon-blue" />
+                <span className={`text-sm digital-font`}>
+                  {decrypt(email || "", encryptionKey)}
+                </span>
+              </div>
+              <div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={`
+                      p-1 rounded cursor-pointer hover:bg-neon-blue/20 transition-colors
+                      ${
+                        isCopied && copiedField === "email"
+                          ? "animate-pulse-once"
+                          : ""
+                      }
+                    `}
+                      onClick={() =>
+                        handleCopy(decrypt(email || "", encryptionKey), "email")
+                      }
+                      aria-label="Copy email"
+                    >
+                      <Copy className="w-4 h-4 text-neon-blue" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border-neon-blue">
+                    <p>
+                      {isCopied && copiedField === "email"
+                        ? "Copied!"
+                        : "Copy email"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          )}
+          {isMobile && (
+            <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <LockKeyholeOpen className="min-w-5 h-5 text-neon-blue" />
+                <span className={`text-sm digital-font`}>
+                  {showPassword
+                    ? decrypt(password || "", encryptionKey)
+                    : "••••••••"}
+                </span>
+              </div>
+              <div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="p-1 cursor-pointer rounded hover:bg-neon-blue/20 transition-colors"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4 text-neon-blue" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-neon-blue" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border-neon-blue">
+                    <p>{showPassword ? "Hide password" : "Show password"}</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={`
+                      p-1 rounded cursor-pointer hover:bg-neon-blue/20 transition-colors
+                      ${
+                        isCopied && copiedField === "password"
+                          ? "animate-pulse-once"
+                          : ""
+                      }
+                    `}
+                      onClick={() =>
+                        handleCopy(
+                          decrypt(password || "", encryptionKey),
+                          "password"
+                        )
+                      }
+                      aria-label="Copy password"
+                    >
+                      <Copy className="w-4 h-4 text-neon-blue" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border-neon-blue">
+                    <p>
+                      {isCopied && copiedField === "password"
+                        ? "Copied!"
+                        : "Copy password"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          )}
+          {pin && (
+            <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <Key className="min-w-5 h-5 text-neon-blue" />
+                <span className={`text-sm digital-font`}>
+                  {showPin ? pin : "••••"}
+                </span>
+              </div>
+              <div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="p-1 rounded hover:bg-neon-blue/20 transition-colors cursor-pointer"
+                      onClick={() => setShowPin(!showPin)}
+                      aria-label={showPin ? "Hide pin" : "Show pin"}
+                    >
+                      {showPin ? (
+                        <EyeOff className="w-4 h-4 text-neon-blue" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-neon-blue" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border-neon-blue">
+                    <p>{showPin ? "Hide pin" : "Show pin"}</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={`
+                      p-1 rounded hover:bg-neon-blue/20 cursor-pointer transition-colors
+                      ${
+                        isCopied && copiedField === "pin"
+                          ? "animate-pulse-once"
+                          : ""
+                      }
+                    `}
+                      onClick={() => handleCopy(pin, "pin")}
+                      aria-label="Copy pin"
+                    >
+                      <Copy className="w-4 h-4 text-neon-blue" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border-neon-blue">
+                    <p>
+                      {isCopied && copiedField === "pin"
+                        ? "Copied!"
+                        : "Copy pin"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          )}
+          {profile && (
+            <div className="flex items-center gap-2">
+              <User className="min-w-5 h-5 text-neon-blue" />
+              <span className={`text-sm digital-font`}>{profile}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-neon-blue" />
+            <Calendar className="min-w-5 h-5 text-neon-blue" />
             <span
               className={`text-sm ${
                 isExpiringSoon
@@ -150,7 +361,7 @@ const OrderCard: React.FC<ToolsResponse> = ({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-neon-blue" />
+            <Clock className="min-w-5 h-5 text-neon-blue" />
             <span
               className={`text-sm ${
                 isExpiringSoon
@@ -199,12 +410,16 @@ const OrderCard: React.FC<ToolsResponse> = ({
 
         <div className="pt-2 space-y-4">
           {isActive && !isExpired ? (
-            <OrderAccessButton
-              category={category}
-              targetUrl={targetUrl}
-              toolData={toolData}
-              toolId={documentId ?? ""}
-            />
+            <div>
+              {!isMobile && (
+                <OrderAccessButton
+                  category={category}
+                  targetUrl={targetUrl}
+                  toolData={toolData}
+                  toolId={documentId ?? ""}
+                />
+              )}
+            </div>
           ) : (
             <div className="flex flex-col gap-2">
               <p className="text-xs text-neon-gray digital-font">

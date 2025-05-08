@@ -9,6 +9,7 @@ import ProfileSection from "@/_components/profile/ProfileSection";
 import SignOut from "@/components/auth/SignOut";
 import { User } from "@/_types/usersTypes";
 import { OrderResponse } from "@/_types/ordersTypes";
+import ExtensionButton from "../extension/ExtensionButton";
 
 interface TabConfig {
   value: string;
@@ -107,9 +108,12 @@ export default function AccountClient({
                 </TabsContent>
 
                 <TabsContent value="my-orders" className="mt-0">
-                  <div className="flex items-center mb-4">
-                    <ShoppingBag className="w-5 h-5 mr-2 text-brand-1" />
-                    <h2 className="text-xl font-semibold">Order History</h2>
+                  <div className="flex justify-between mb-4">
+                    <div className="flex items-center">
+                      <ShoppingBag className="w-5 h-5 mr-2 text-brand-1" />
+                      <h2 className="text-xl font-semibold">Order History</h2>
+                    </div>
+                    <ExtensionButton />
                   </div>
                   <OrdersClient
                     initialOrders={ordersData}
