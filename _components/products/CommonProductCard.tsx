@@ -15,7 +15,6 @@ const CommonProductCard = ({
   product: Product;
   isCredit?: boolean;
 }) => {
-
   return (
     <Card className="group border rounded-2xl border-gray-50/20 bg-brand-3 backdrop-blur-2xl text-white overflow-hidden shadow-md hover:shadow-lg py-0 gap-0 p-3 w-full  h-fit relative">
       <FallbackImage
@@ -55,8 +54,8 @@ const CommonProductCard = ({
               {product?.title}
             </h2>
             <p className=" font-medium bg-gradient-to-t from-brand-1 via-brand-1 to-white bg-clip-text text-transparent text-start text-2xl">
-              {getProductPrice(product)}৳{" "}
-              {product?.isOffer && (
+              {product?.isFree ? "FREE" : `${getProductPrice(product)}৳`}{" "}
+              {(product?.isOffer || product?.isFree) && (
                 <span className="text-white font-normal text-base line-through">
                   {product?.price?.toLocaleString()}৳
                 </span>

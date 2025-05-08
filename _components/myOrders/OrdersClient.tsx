@@ -5,7 +5,6 @@ import { getOrders } from "@/services/api/orderRequest";
 import { fetchPublic } from "@/services/fetch/ssrFetch";
 import { useEffect, useState } from "react";
 import OrderSection from "./OrderSection"; // Adjust path if needed
-// import Skeleton from "./Skeleton"; // Adjust path if needed
 
 interface OrdersClientProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,12 +17,8 @@ export default function OrdersClient({
   email,
 }: OrdersClientProps) {
   const [orders, setOrders] = useState(initialOrders);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Handle initial skeleton and API refetch
   useEffect(() => {
-    // Show skeleton for at least 1 second
-    setIsLoading(true);
 
     const timer = setTimeout(async () => {
       if (email) {
@@ -36,14 +31,10 @@ export default function OrdersClient({
           console.error("Error refetching orders:", error);
         }
       }
-      setIsLoading(false);
     }, 10);
 
     return () => clearTimeout(timer);
   }, [email]); // Re-run if email changes
 
-  // if (isLoading) {
-  //   return <Skeleton />;
-  // }
   return <OrderSection orders={orders} />;
 }

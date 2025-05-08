@@ -19,7 +19,7 @@ import { updateTool } from "@/services/api/toolRequest";
 import useFetch from "@/services/fetch/csrFecth";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import OrderCard from "./OrderCard";
 
 type SortOption =
@@ -45,6 +45,35 @@ const OrderSection = (orders: OrderResponse) => {
   const [processedExpiredIds, setProcessedExpiredIds] = useState<Set<string>>(
     new Set()
   );
+  const tabsListRef = useRef<HTMLDivElement>(null);
+
+  // Tab configuration
+  const tabConfig = [
+    {
+      value: "active",
+      label: "Active Orders",
+      orders: filteredActive,
+      originalOrders: activeOrders,
+      emptyType: "active" as const,
+      isActive: true,
+    },
+    {
+      value: "archived",
+      label: "Archived Orders",
+      orders: filteredArchived,
+      originalOrders: archivedOrders,
+      emptyType: "archived" as const,
+      isActive: false,
+    },
+    {
+      value: "failed",
+      label: "Failed Orders",
+      orders: filteredFailed,
+      originalOrders: failedOrders,
+      emptyType: "failed" as const,
+      isActive: false,
+    },
+  ];
 
   // Extract all categories from orders
   const extractCategories = useCallback(() => {
@@ -121,7 +150,7 @@ const OrderSection = (orders: OrderResponse) => {
     [searchQuery, selectedCategories]
   );
 
-  // Handle expired order processing - separated from main useEffect
+  // Handle expired order processing
   const processExpiredOrder = useCallback(
     async (product: ToolsResponse) => {
       if (!product.documentId || processedExpiredIds.has(product.documentId)) {
@@ -129,7 +158,6 @@ const OrderSection = (orders: OrderResponse) => {
       }
 
       try {
-        // Only decrement if totalOrder is greater than 0
         if ((product?.totalOrder || 0) > 0) {
           const payload = {
             data: { totalOrder: (product?.totalOrder || 0) - 1 },
@@ -137,7 +165,6 @@ const OrderSection = (orders: OrderResponse) => {
           const request = updateTool(product.documentId, payload);
           await fetchPublic(request);
 
-          // Mark this item as processed
           setProcessedExpiredIds((prev) => {
             const updated = new Set(prev);
             if (product.documentId) {
@@ -164,16 +191,13 @@ const OrderSection = (orders: OrderResponse) => {
 
     orders.orders.forEach((order) => {
       if (!order.isPaid && order.tools) {
-        // Handle failed orders
-        // Instead of pushing individual products, push the entire order with its products
         failed.push({
           ...order,
           orderId: order.id || Math.random().toString(36).substring(2),
           createdAt: order.createdAt || new Date().toISOString(),
-          products: order.products, // Include the full products array
+          products: order.products,
         });
       } else if (order.isPaid && order.tools) {
-        // Check if the order is expired
         const expireDate = new Date(order.expireDate ?? 0);
         const isExpired = expireDate < currentDate;
 
@@ -226,51 +250,57 @@ const OrderSection = (orders: OrderResponse) => {
 
   // Generate a truly unique key for each order item
   const generateUniqueKey = (prefix: string, item: any, index: number) => {
-    // Use a combination of prefix, documentId/orderId, and index to ensure uniqueness
     const itemId = item.documentId || item.id || "";
     const orderOrItemId = item.orderId || "";
     return `${prefix}-${itemId}-${orderOrItemId}-${index}`;
   };
 
+  // Effect for handling tab indicator animation
+  useEffect(() => {
+    const tabsList = tabsListRef.current;
+    if (!tabsList) return;
+
+    const activeTab = tabsList.querySelector('[data-state="active"]');
+    if (activeTab) {
+      const { offsetWidth, offsetLeft } = activeTab as HTMLElement;
+      tabsList.style.setProperty("--indicator-width", `${offsetWidth}px`);
+      tabsList.style.setProperty("--indicator-left", `${offsetLeft}px`);
+    }
+  }, []);
+
   return (
-    <Card className="shadow-md">
+    <Card className="shadow-md bg-brand-3/5 backdrop-blur-2xl">
       <CardContent className="px-6">
         {orders ? (
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6 h-12">
-              <TabsTrigger value="active">
-                Active Orders
-                {activeOrders.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]"
-                  >
-                    {activeOrders.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="archived">
-                Archived Orders
-                {archivedOrders.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]"
-                  >
-                    {archivedOrders.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="failed">
-                Failed Order
-                {failedOrders.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF]"
-                  >
-                    {failedOrders.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
+            <TabsList
+              ref={tabsListRef}
+              className="relative mb-6 flex bg-muted/50 rounded-lg p-1 h-fit w-full"
+              style={
+                {
+                  "--indicator-width": "0px",
+                  "--indicator-left": "0px",
+                } as React.CSSProperties
+              }
+            >
+            
+              {tabConfig.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="relative basis-1/3 h-12 px-4 text-sm font-medium transition-colors data-[state=active]:text-primary data-[state=active]:font-semibold hover:bg-muted/50 rounded-md z-10"
+                >
+                  {tab.label}
+                  {tab.originalOrders.length > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 [background:linear-gradient(152deg,#FFF_-185.49%,#EA721C_94.01%),#477BFF] text-white"
+                    >
+                      {tab.originalOrders.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             {/* Search and filter controls */}
@@ -282,13 +312,13 @@ const OrderSection = (orders: OrderResponse) => {
                     placeholder="Search orders..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-12"
+                    className="pl-10 h-12 transition-all duration-200 focus:ring-2 focus:ring-primary"
                   />
                   {searchQuery && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 p-0"
+                      className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 p-0 hover:bg-muted"
                       onClick={() => setSearchQuery("")}
                     >
                       <X className="h-4 w-4" />
@@ -300,7 +330,7 @@ const OrderSection = (orders: OrderResponse) => {
                   value={sortBy}
                   onValueChange={(value) => setSortBy(value as SortOption)}
                 >
-                  <SelectTrigger className="w-40 !h-12">
+                  <SelectTrigger className="w-40 !h-12 transition-all duration-200">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -321,7 +351,9 @@ const OrderSection = (orders: OrderResponse) => {
                   variant="outline"
                   size="icon"
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`${showFilters ? "bg-primary/10" : ""} h-12 w-12`}
+                  className={`h-12 w-12 transition-all duration-200 ${
+                    showFilters ? "bg-primary/10 ring-2 ring-primary" : ""
+                  }`}
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                 </Button>
@@ -329,7 +361,7 @@ const OrderSection = (orders: OrderResponse) => {
 
               {/* Category filters */}
               {showFilters && (
-                <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex flex-wrap gap-2 items-center animate-in fade-in duration-300">
                   <span className="text-sm font-medium mr-2">Categories:</span>
                   {availableCategories.map((category) => (
                     <Badge
@@ -339,7 +371,7 @@ const OrderSection = (orders: OrderResponse) => {
                           ? "default"
                           : "outline"
                       }
-                      className="cursor-pointer"
+                      className="cursor-pointer transition-all duration-200 hover:scale-105"
                       onClick={() => toggleCategory(category)}
                     >
                       {category}
@@ -352,7 +384,7 @@ const OrderSection = (orders: OrderResponse) => {
                       variant="ghost"
                       size="sm"
                       onClick={clearFilters}
-                      className="ml-auto text-xs"
+                      className="ml-auto text-xs hover:text-primary transition-colors"
                     >
                       Clear All Filters
                     </Button>
@@ -361,118 +393,68 @@ const OrderSection = (orders: OrderResponse) => {
               )}
             </div>
 
-            <TabsContent value="active">
-              {filteredActive.length > 0 ? (
-                <ScrollArea className="h-fit">
-                  <div className="space-y-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {filteredActive.map((product, index) => (
-                      <OrderCard
-                        {...product}
-                        key={generateUniqueKey("active", product, index)}
-                        expireDate={product.expireDate}
-                        isActive
-                      />
-                    ))}
-                  </div>
-                </ScrollArea>
-              ) : activeOrders.length > 0 ? (
-                <Card className="p-8 text-center">
-                  <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">
-                      No matching orders
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Try adjusting your search or filters
-                    </p>
-                    <Button className="mt-4" onClick={clearFilters}>
-                      Clear Filters
-                    </Button>
-                  </div>
-                </Card>
-              ) : (
-                <EmptyOrderState type="active" />
-              )}
-            </TabsContent>
-
-            <TabsContent value="archived">
-              {filteredArchived.length > 0 ? (
-                <ScrollArea className="h-fit">
-                  <div className="space-y-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {filteredArchived.map((product, index) => (
-                      <OrderCard
-                        {...product}
-                        key={generateUniqueKey("archived", product, index)}
-                        expireDate={product.expireDate}
-                      />
-                    ))}
-                  </div>
-                </ScrollArea>
-              ) : archivedOrders.length > 0 ? (
-                <Card className="p-8 text-center">
-                  <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">
-                      No matching archived orders
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Try adjusting your search or filters
-                    </p>
-                    <Button className="mt-4" onClick={clearFilters}>
-                      Clear Filters
-                    </Button>
-                  </div>
-                </Card>
-              ) : (
-                <EmptyOrderState type="archived" />
-              )}
-            </TabsContent>
-
-            <TabsContent value="failed">
-              {filteredFailed.length > 0 ? (
-                <ScrollArea className="h-fit">
-                  <div className="space-y-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {filteredFailed.map((order, index) => {
-                      // console.log(order.products,"++");
-                      return (
-                        <div key={generateUniqueKey("failed", order, index)}>
-                          {/* Render OrderCard for each product in the order */}
-                          {order.products.map(
-                            (product: ToolsResponse, productIndex: number) => (
-                              <OrderCard
-                                key={generateUniqueKey(
-                                  `failed-product-${order.orderId}`,
-                                  product,
-                                  productIndex
-                                )}
-                                {...product}
-                                expireDate={order.expireDate}
-                              />
+            {/* Dynamic Tabs Content */}
+            {tabConfig.map((tab) => (
+              <TabsContent
+                key={tab.value}
+                value={tab.value}
+                className="animate-in fade-in duration-300"
+              >
+                {tab.orders.length > 0 ? (
+                  <ScrollArea className="h-fit">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {tab.orders.map((item, index) => (
+                        <div
+                          key={generateUniqueKey(tab.value, item, index)}
+                          className="animate-in fade-in zoom-in-95 duration-300"
+                        >
+                          {tab.value === "failed" ? (
+                            item.products.map(
+                              (
+                                product: ToolsResponse,
+                                productIndex: number
+                              ) => (
+                                <OrderCard
+                                  key={generateUniqueKey(
+                                    `failed-product-${item.orderId}`,
+                                    product,
+                                    productIndex
+                                  )}
+                                  {...product}
+                                  expireDate={item.expireDate}
+                                />
+                              )
                             )
+                          ) : (
+                            <OrderCard
+                              {...item}
+                              expireDate={item.expireDate}
+                              isActive={tab.isActive}
+                            />
                           )}
-                          {/* Pass the entire products array to BuyButtonContainer */}
-                          {/* <BuyButtonContainer product={order.products[0]} /> */}
                         </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              ) : failedOrders.length > 0 ? (
-                <Card className="p-8 text-center">
-                  <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-                    <h3 className="text-lg font-semibold">
-                      No matching failed orders
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Try adjusting your search or filters
-                    </p>
-                    <Button className="mt-4" onClick={clearFilters}>
-                      Clear Filters
-                    </Button>
-                  </div>
-                </Card>
-              ) : (
-                <EmptyOrderState type="failed" />
-              )}
-            </TabsContent>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : tab.originalOrders.length > 0 ? (
+                  <Card className="p-8 text-center animate-in fade-in duration-300">
+                    <div className="mx-auto flex max-w-md flex-col items-center justify-center">
+                      <h3 className="text-lg font-semibold">
+                        No matching {tab.label.toLowerCase()}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Try adjusting your search or filters
+                      </p>
+                      <Button className="mt-4" onClick={clearFilters}>
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </Card>
+                ) : (
+                  <EmptyOrderState type={tab.emptyType} />
+                )}
+              </TabsContent>
+            ))}
           </Tabs>
         ) : (
           <EmptyOrderState type="all" />

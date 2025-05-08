@@ -45,9 +45,9 @@ const OrderAccessButton = (props: Props) => {
       variant="outline"
       onClick={handleEncryptAndCopy}
       disabled={isLoading}
-      className="mt-2 sm:mt-0 w-full sm:w-auto"
+      className="w-full [background:linear-gradient(152deg,#FFF_-185.49%,#009E60.01%),#477BFF] h-12 rounded-full"
     >
-      <ExternalLink className="h-4 w-4 mr-2" />
+      <ExternalLink className="h-4 w-4 mr-1" />
       Get Access
     </Button>
   );

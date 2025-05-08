@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import useCartCalculations from "./useCartCalculations";
 import { useCartStore } from "@/_store/CartStore";
 import { useCouponStore } from "@/services/store/useCouponStore";
+import { randomBytes } from "crypto";
 
 const useCheckout = (tools: ToolsResponse[]) => {
   const { data: session } = useSession();
@@ -22,7 +23,6 @@ const useCheckout = (tools: ToolsResponse[]) => {
   const fetchedRef = useRef(false);
   const { setCurrentTool } = useGrantedToolsStore();
   const { setCoupons } = useCouponStore();
-
   const [selectedPayment, setSelectedPayment] = useState<string>("bkash");
   const [isProcessing, setIsProcessing] = useState(false);
   const [distributions, setDistributions] = useState<
@@ -45,7 +45,6 @@ const useCheckout = (tools: ToolsResponse[]) => {
     applyCoupon,
     removeCoupon,
   } = useCartCalculations(cartItems, tools, distributions);
-
   useEffect(() => {
     setShowSupportMessage(cartShowSupportMessage);
   }, [cartShowSupportMessage]);
@@ -100,18 +99,6 @@ const useCheckout = (tools: ToolsResponse[]) => {
         category: productCategory,
         month: productMonth,
         tools: grantedTool,
-        // coupons: appliedCoupons.map((coupon) => ({
-        //   code: coupon.code,
-        //   discount: coupon.isPercentage
-        //     ? (cartItems.reduce(
-        //         (sum, item) => sum + (Number(item?.price) || 0),
-        //         0
-        //       ) *
-        //         coupon.discount) /
-        //       100
-        //     : coupon.discount,
-        //   isPercentage: coupon.isPercentage,
-        // })),
       },
     };
 
@@ -125,12 +112,6 @@ const useCheckout = (tools: ToolsResponse[]) => {
 
       // Update coupon usage (mock for now, replace with API call)
       for (const coupon of appliedCoupons) {
-        // Example API call to update usedCount and userUsage
-        // await fetchPublic({
-        //   url: `/api/coupons/${coupon.code}/use`,
-        //   method: "POST",
-        //   body: { userEmail: session.user.email },
-        // });
         console.log(`Incremented usage for coupon ${coupon.code}`);
       }
 
@@ -151,10 +132,21 @@ const useCheckout = (tools: ToolsResponse[]) => {
       toast.error("No available tool selected.");
       return;
     }
+    const randomUUID = randomBytes(10).toString("hex");
 
-    setIsProcessing(true);
     try {
       await createOrderAndUpdateCart();
+
+      // If the item is free, skip payment API call and redirect directly
+      if (cartItems[0]?.isFree) {
+        setCurrentTool(grantedToolDetails);
+        setCoupons(appliedCoupons);
+        clearCart();
+        window.location.href = `/payment-confirm?success=${true}&paymentID=FREE${randomUUID}`;
+        return;
+      }
+
+      // Only reach here if the item is not free
       const response = await fetch("/api/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,10 +175,10 @@ const useCheckout = (tools: ToolsResponse[]) => {
         clearCart();
         window.location.href = sessionData.bkashURL;
       } else {
-        toast.error("Failed to initiate bKash payment.");
+        toast.error("Failed to initiate payment.");
       }
     } catch (error) {
-      console.error("bKash payment error:", error);
+      console.error("payment error:", error);
       toast.error("Payment failed. Please try again.");
     } finally {
       setIsProcessing(false);
@@ -196,6 +188,7 @@ const useCheckout = (tools: ToolsResponse[]) => {
   return {
     loading,
     total,
+    isFree: cartItems[0]?.isFree,
     isProcessing,
     handleBkashPayment,
     selectedPayment,

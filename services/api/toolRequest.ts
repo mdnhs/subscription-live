@@ -8,12 +8,25 @@ const getTool: any = () => {
   };
 };
 
-const updateTool: any = (id: string, payload:any) => {
+const updateTool: any = (id: string, payload: any) => {
   return {
     method: "PUT",
     path: `/api/tools/${id}`,
     payload: payload,
   };
 };
+const addRequestedTool: any = ( payload: any) => {
+  return {
+    method: "POST",
+    path: `/api/requests`,
+    payload: payload,
+  };
+};
+const getRequestedTool: any = () => {
+  return {
+    method: "GET",
+    path: `/api/requests`
+  };
+};
 
-export { getTool, updateTool };
+export { getTool, updateTool, addRequestedTool, getRequestedTool };
