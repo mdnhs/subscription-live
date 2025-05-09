@@ -6,6 +6,8 @@ export interface Product {
   getAccessData: string;
   targetUrl: string;
   isOffer: boolean;
+  isMobile: boolean;
+  isPersonal: boolean;
   isFree: boolean;
   isCreditOffer: boolean;
   offerAmount: number;

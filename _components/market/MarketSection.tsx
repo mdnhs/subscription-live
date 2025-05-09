@@ -1,14 +1,7 @@
 "use client";
 import { Product } from "@/_types/product";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,12 +11,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import CommonProductCard from "../products/CommonProductCard";
-import { getExpireDays } from "@/function/dateFormatter";
+import FilterContent from "./FilterContent";
+import FilteredProducts from "./FilteredProducts";
 
 type SortOption =
   | "newest"
@@ -37,6 +28,7 @@ const MarketSection = ({ products }: { products: Product[] }) => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [instantDelivery, setInstantDelivery] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
@@ -45,6 +37,7 @@ const MarketSection = ({ products }: { products: Product[] }) => {
 
   // Extract unique categories and max price
   const categories = Array.from(new Set(products.map((p) => p.category)));
+  const months = Array.from(new Set(products.map((p) => p.month)));
   const maxPrice = Math.max(...products.map((product) => product.price), 1000);
 
   // Initialize price range on load
@@ -101,6 +94,10 @@ const MarketSection = ({ products }: { products: Product[] }) => {
     if (instantDelivery) {
       filtered = filtered.filter((product) => product.instantDelivery);
     }
+    // Mobile filter
+    if (isMobile) {
+      filtered = filtered.filter((product) => product.isMobile);
+    }
 
     // Month filter
     if (selectedMonth !== null) {
@@ -138,6 +135,7 @@ const MarketSection = ({ products }: { products: Product[] }) => {
         priceRange[0] > 0 ||
         priceRange[1] < maxPrice ||
         instantDelivery ||
+        isMobile ||
         selectedMonth !== null ||
         sortBy !== "newest"
     );
@@ -148,6 +146,7 @@ const MarketSection = ({ products }: { products: Product[] }) => {
     priceRange,
     selectedCategories,
     instantDelivery,
+    isMobile,
     selectedMonth,
     maxPrice,
   ]);
@@ -175,6 +174,7 @@ const MarketSection = ({ products }: { products: Product[] }) => {
     setPriceRange([0, maxPrice]);
     setSelectedCategories([]);
     setInstantDelivery(false);
+    setIsMobile(false);
     setSelectedMonth(null);
     setSearchQuery("");
     setSortBy("newest");
@@ -199,12 +199,15 @@ const MarketSection = ({ products }: { products: Product[] }) => {
           <SheetContent side="left" className="w-[300px]">
             <FilterContent
               categories={categories}
+              months={months}
               priceRange={priceRange}
               setPriceRange={setPriceRange}
               selectedCategories={selectedCategories}
               handleCategoryChange={toggleCategory}
               instantDelivery={instantDelivery}
               setInstantDelivery={setInstantDelivery}
+              isMobile={isMobile}
+              setIsMobile={setIsMobile}
               selectedMonth={selectedMonth}
               setSelectedMonth={setSelectedMonth}
             />
@@ -230,12 +233,15 @@ const MarketSection = ({ products }: { products: Product[] }) => {
 
         <FilterContent
           categories={categories}
+          months={months}
           priceRange={priceRange}
           setPriceRange={setPriceRange}
           selectedCategories={selectedCategories}
           handleCategoryChange={toggleCategory}
           instantDelivery={instantDelivery}
           setInstantDelivery={setInstantDelivery}
+          isMobile={isMobile}
+          setIsMobile={setIsMobile}
           selectedMonth={selectedMonth}
           setSelectedMonth={setSelectedMonth}
         />
@@ -317,6 +323,15 @@ const MarketSection = ({ products }: { products: Product[] }) => {
                   />
                 </Badge>
               )}
+              {isMobile && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  For Mobile
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setIsMobile(false)}
+                  />
+                </Badge>
+              )}
               {selectedMonth !== null && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   {selectedMonth} Month{selectedMonth > 1 ? "s" : ""}
@@ -340,122 +355,13 @@ const MarketSection = ({ products }: { products: Product[] }) => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredProducts.length > 0 ? (
-            filteredProducts
-              .sort((a, b) => (b.isOffer ? 1 : 0) - (a.isOffer ? 1 : 0))
-              .map((product) => (
-                <CommonProductCard key={product.id} product={product} />
-              ))
-          ) : (
-            <div className="col-span-full text-center p-8 bg-muted rounded-lg">
-              <h3 className="text-lg font-semibold">No products found</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                Try adjusting your search or filters
-              </p>
-              <Button className="mt-4" onClick={resetFilters}>
-                Clear Filters
-              </Button>
-            </div>
-          )}
-        </div>
+        <FilteredProducts
+          filteredProducts={filteredProducts}
+          resetFilters={resetFilters}
+        />
       </div>
     </div>
   );
 };
-
-const FilterContent = ({
-  categories,
-  priceRange,
-  setPriceRange,
-  selectedCategories,
-  handleCategoryChange,
-  instantDelivery,
-  setInstantDelivery,
-  selectedMonth,
-  setSelectedMonth,
-}: any) => (
-  <Accordion
-    type="multiple"
-    className="space-y-6"
-    defaultValue={["price", "category", "delivery", "month"]}
-  >
-    {/* Price Filter */}
-    <AccordionItem value="price">
-      <AccordionTrigger>Price Range</AccordionTrigger>
-      <AccordionContent>
-        <Slider
-          value={priceRange}
-          onValueChange={setPriceRange}
-          min={0}
-          max={1000}
-          step={10}
-          className="w-full mt-2"
-        />
-        <div className="flex justify-between text-sm mt-2">
-          <span>৳{priceRange[0]}</span>
-          <span>৳{priceRange[1]}</span>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-
-    {/* Category Filter */}
-    <AccordionItem value="category">
-      <AccordionTrigger>Category</AccordionTrigger>
-      <AccordionContent className="space-y-2">
-        {categories.map((category: string) => (
-          <div key={category} className="flex items-center space-x-2">
-            <Checkbox
-              id={category}
-              checked={selectedCategories.includes(category)}
-              onCheckedChange={() => handleCategoryChange(category)}
-            />
-            <label htmlFor={category} className="text-sm">
-              {category}
-            </label>
-          </div>
-        ))}
-      </AccordionContent>
-    </AccordionItem>
-
-    {/* Instant Delivery */}
-    <AccordionItem value="delivery">
-      <AccordionTrigger>Delivery</AccordionTrigger>
-      <AccordionContent>
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="instant-delivery"
-            checked={instantDelivery}
-            onCheckedChange={setInstantDelivery}
-          />
-          <label htmlFor="instant-delivery" className="text-sm">
-            Instant Delivery Only
-          </label>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-
-    {/* Month Filter */}
-    <AccordionItem value="month">
-      <AccordionTrigger>Duration</AccordionTrigger>
-      <AccordionContent className="flex flex-wrap gap-2">
-        {[0.33, 0.66, 1, 3, 6, 12].map((month) => (
-          <Button
-            key={month}
-            variant={selectedMonth === month ? "default" : "outline"}
-            size="sm"
-            onClick={() =>
-              setSelectedMonth((prev: number | null) =>
-                prev === month ? null : month
-              )
-            }
-          >
-            {month} Month{month > 1 ? "s" : ""} ({getExpireDays(month)})
-          </Button>
-        ))}
-      </AccordionContent>
-    </AccordionItem>
-  </Accordion>
-);
 
 export default MarketSection;

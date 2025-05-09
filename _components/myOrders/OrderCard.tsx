@@ -63,7 +63,7 @@ const OrderCard: React.FC<ToolsResponse> = ({
   pin,
   profile,
 }) => {
-  const encryptionKey = process.env.DECRYPT_PASS || "";
+  const encryptionKey =process.env.DECRYPT_PASS;
   const daysUntilExpiry = getExpireDays(month);
   const expireDateTime = new Date(expireDate ?? new Date());
   const formattedExpiryDate = getFormattedExpireDate(
