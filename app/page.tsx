@@ -17,18 +17,20 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen">
-      <LandingHero />
+    <main className="min-h-screen space-y-10">
+      <div>
+        <LandingHero />
 
-      {/* Products Section with enhanced styling */}
-      <section id="weekend-products" className="container text-center px-4">
-        <ProductSection
-          headline="Trending on this week"
-          url="/market"
-          products={products}
-          type="week"
-        />
-      </section>
+        {/* Products Section with enhanced styling */}
+        <section id="weekend-products" className="container text-center px-4">
+          <ProductSection
+            headline="Trending on this week"
+            url="/market"
+            products={products}
+            type="week"
+          />
+        </section>
+      </div>
       <LandingSectionOne products={products} />
       <LandingSectionTwo />
 
@@ -39,6 +41,22 @@ export default async function Home() {
           products={products}
           type="common"
         />
+      </section>
+      <section id="productMobile" className="container text-center px-4">
+        <ProductSection
+          headline="Subscription for Mobile"
+          url="/market"
+          products={products}
+          type="mobile"
+        />{" "}
+      </section>
+      <section id="productWeb" className="container text-center px-4">
+        <ProductSection
+          headline="Subscription for Web"
+          url="/market"
+          products={products}
+          type="web"
+        />{" "}
       </section>
     </main>
   );

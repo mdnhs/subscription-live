@@ -10,6 +10,7 @@ import SignOut from "@/components/auth/SignOut";
 import { User } from "@/_types/usersTypes";
 import { OrderResponse } from "@/_types/ordersTypes";
 import ExtensionButton from "../extension/ExtensionButton";
+import WatchTutorial from "../tutorial/WatchTutorial";
 
 interface TabConfig {
   value: string;
@@ -113,7 +114,10 @@ export default function AccountClient({
                       <ShoppingBag className="w-5 h-5 mr-2 text-brand-1" />
                       <h2 className="text-xl font-semibold">Order History</h2>
                     </div>
-                    <ExtensionButton />
+                    <div className="flex items-center gap-2">
+                      <WatchTutorial />
+                      <ExtensionButton />
+                    </div>
                   </div>
                   <OrdersClient
                     initialOrders={ordersData}
